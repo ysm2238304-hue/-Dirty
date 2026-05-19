@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- 解除 Google 防盜連，確保 KML 原始照片能正常顯示 -->
+    <!-- 強制瀏覽器不快取，確保拿到最新代碼 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    
     <meta name="referrer" content="no-referrer">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,7 +16,6 @@
     <meta name="apple-mobile-web-app-title" content="髒亂點巡檢">
     <meta name="theme-color" content="#020617">
     
-    <!-- 動態產生 Manifest 的佔位符 -->
     <link rel="manifest" id="dynamic-manifest">
 
     <title>115年南投縣髒亂點巡查系統</title>
@@ -90,6 +93,7 @@
         </div>
         <h1 class="text-3xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500 mb-2">髒亂點巡檢</h1>
         <p class="text-slate-400 tracking-widest text-sm uppercase">115年 廢棄物/菸蒂/雜草</p>
+        <p class="text-sm text-red-500 font-bold mt-2 shadow-black">v3.0 終極修復版</p>
         
         <div id="loading-status" class="mt-12 text-sky-400 text-sm animate-pulse flex items-center gap-2">
             <i class="ph ph-spinner animate-spin text-lg"></i> 載入 KML 圖資中...
@@ -112,7 +116,8 @@
                 <i class="ph-fill ph-lock-key text-3xl text-sky-400"></i>
             </div>
             <h2 class="text-xl font-bold text-white mb-2 tracking-widest">系統登入</h2>
-            <p class="text-slate-400 text-sm mb-6">請輸入授權碼以存取巡檢資料</p>
+            <p class="text-slate-400 text-sm mb-2">請輸入授權碼以存取巡檢資料</p>
+            <p class="text-xs text-red-500 font-bold mb-6">v3.0 終極修復版</p>
             <input type="password" id="pwd-input" placeholder="請輸入密碼" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white text-center tracking-widest focus:outline-none focus:border-sky-400 mb-2 transition-colors">
             <p id="pwd-error" class="text-red-400 text-xs mb-4 h-4 opacity-0 transition-opacity">密碼錯誤，請重新輸入</p>
             <button id="btn-login" onclick="checkPassword()" class="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold py-3 px-4 rounded-xl shadow-[0_0_15px_rgba(14,165,233,0.4)] transition-all active:scale-95 tracking-widest cursor-pointer flex justify-center items-center gap-2">
@@ -313,12 +318,15 @@
 
         const swCode = `
             self.addEventListener('install', (e) => self.skipWaiting());
-            self.addEventListener('activate', (e) => self.clients.claim());
+            self.addEventListener('activate', (e) => {
+                e.waitUntil(caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))));
+                self.clients.claim();
+            });
             self.addEventListener('fetch', (e) => {}); 
         `;
         const swBlob = new Blob([swCode], { type: 'application/javascript' });
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(console.error);
+            navigator.serviceWorker.register(URL.createObjectURL(swBlob)).then(reg => reg.update()).catch(console.error);
         }
 
         let deferredPrompt;
@@ -351,7 +359,9 @@
             setTimeout(() => promptEl.classList.add('hidden'), 300);
         }
 
-        // ------------------ 系統參數與狀態 ------------------
+        // ==========================================
+        // 🚨 系統參數與狀態 (請確認此網址是否正確)
+        // ==========================================
         const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLHvYPz6eJoiWOAXpGL-tFInwel8EnaHUYXPNHR04Z10n_FcI-zxALMfHCRzn5xg-TnA/exec"; 
         const SYSTEM_PASSWORD = "54004658";
 
@@ -471,7 +481,7 @@
             
             const folders = xmlDoc.getElementsByTagName("Folder");
             mapData = {}; 
-            let globalPointIndex = 0; // 新增：加入全域流水號，確保每個點位 ID 絕對唯一
+            let globalPointIndex = 0; 
 
             Array.from(folders).forEach(folder => {
                 const folderNameNode = folder.getElementsByTagName("name")[0];
@@ -506,7 +516,6 @@
                         const valNode = data.getElementsByTagName("value")[0];
                         const val = valNode ? valNode.textContent.trim() : "";
 
-                        // 使用 .includes() 進行模糊比對
                         if (nameAttr === "案件數") idRaw = val;
                         else if (nameAttr.includes("鄉鎮") || nameAttr.includes("行政區")) township = val;
                         else if (nameAttr.includes("地點")) location = val; 
@@ -520,7 +529,6 @@
                     const townshipKey = township.substring(0, 3);
                     if (!townshipKey) return;
                     
-                    // 關鍵修正：在 ID 後面加上遞增的流水號，保證清單點擊時絕對不會認錯點位
                     const uniqueId = `${category}_${idRaw}_${globalPointIndex++}`;
 
                     let finalName = "";
@@ -548,8 +556,6 @@
                     });
                 });
             });
-
-            console.log("KML 解析完成:", mapData);
             
             if (Object.keys(mapData).length === 0) {
                 alert("⚠️ 系統未能從 KML 中解析到對應圖層資料！請確認 KML 內容。");
@@ -752,6 +758,9 @@
             }
         }
 
+        // ==========================================
+        // 🚨 終極除錯優化 1：強制捕捉狀態按鈕錯誤並彈窗
+        // ==========================================
         async function toggleItemStatus() {
             if(!currentItemId || !currentTownshipId) return;
             const poiData = mapData[currentTownshipId].points.find(p => p.id === currentItemId);
@@ -771,21 +780,58 @@
             const markText = document.getElementById('mark-text');
             const markIcon = document.getElementById('mark-icon');
 
-            btn.classList.add('opacity-50', 'cursor-wait');
+            const originalClassName = btn.className;
+            const originalIconClass = markIcon.className;
+            const originalText = markText.innerText;
+
+            btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-slate-800 border-slate-700 text-sky-400 cursor-wait h-[50px] min-w-[80px]";
             markIcon.className = "ph ph-spinner animate-spin text-lg";
             markText.innerText = '同步中...';
 
+            const apiPeriod = poiData.category === '雜草' ? 'None' : currentPeriod;
+            const apiStatus = poiData.category === '雜草' ? (newState ? '已結案' : '未處理') : (newState ? '已巡檢' : '未巡檢');
+
             try {
-                if (poiData.category === '雜草') inspectionState[currentItemId].done = newState;
-                else inspectionState[currentItemId][currentPeriod] = newState;
+                const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'update_status',
+                        category: poiData.category,
+                        period: apiPeriod,
+                        itemId: poiData.rawId,
+                        status: apiStatus,
+                        township: mapData[currentTownshipId].name,
+                        pointName: poiData.name
+                    })
+                });
+
+                if (!response.ok) throw new Error(`HTTP 錯誤狀態碼: ${response.status}`);
                 
-                saveState(); 
-                updateBottomSheetStatus();
+                const result = await response.json();
+                
+                if (result.status === "success" || result.status === "warning") {
+                    if (poiData.category === '雜草') {
+                        inspectionState[currentItemId].done = newState;
+                    } else {
+                        inspectionState[currentItemId][currentPeriod] = newState;
+                    }
+                    
+                    saveState(); 
+                    updateBottomSheetStatus();
+                    
+                    if (result.status === "warning") {
+                        alert(`⚠️ 試算表警報：\n${result.message}`);
+                    }
+                } else {
+                    alert(`⚠️ 後端拒絕更新：\n${result.message}\n(請確認後端代碼是否已更新支援 update_status 動作)`);
+                    btn.className = originalClassName; markIcon.className = originalIconClass; markText.innerText = originalText;
+                }
             } catch(e) { 
-                alert("⚠️ 狀態更新失敗！"); 
-                updateBottomSheetStatus();
-            } 
-            finally { btn.classList.remove('opacity-50', 'cursor-wait'); }
+                // ⚠️ 若卡住，這裡一定會跳出錯誤！
+                alert(`連線失敗！\n1. 您的後端 URL 是否正確？\n2. GAS 部署權限是否為「所有人」？\n3. 系統錯誤訊息：${e.message}`); 
+                btn.className = originalClassName; markIcon.className = originalIconClass; markText.innerText = originalText;
+            }
         }
 
         function showBottomSheet(poi, tId) {
@@ -859,7 +905,6 @@
             bs.classList.add('hidden-sheet'); currentItemId = null;
         }
 
-        // ------------------ 照片上傳邏輯 ------------------
         function handlePhotoUpload(event) {
             const files = event.target.files;
             if(!files.length || !currentItemId || !currentTownshipId) return;
@@ -932,6 +977,9 @@
             saveState(); renderPhotos();
         }
 
+        // ==========================================
+        // 🚨 終極除錯優化 2：修正邏輯錯誤，並捕捉照片上傳的阻擋
+        // ==========================================
         async function uploadPhotosToDrive() {
             if (!currentItemId || !currentTownshipId) return;
             const poiData = mapData[currentTownshipId].points.find(p => p.id === currentItemId);
@@ -943,9 +991,12 @@
             if (pendingPhotos.length === 0) return alert("目前沒有需要上傳的新照片！");
             
             const btn = document.getElementById('btn-upload-drive');
+            const originalBtnHTML = btn.innerHTML;
+            
             if (btn) { btn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> 上傳並填寫報表中...'; btn.disabled = true; btn.classList.add('opacity-50'); }
 
             let successCount = 0;
+            let hasError = false;
 
             for (let i = 0; i < photos.length; i++) {
                 if (photos[i].uploaded) continue;
@@ -973,33 +1024,48 @@
                         })
                     });
                     
+                    if (!response.ok) throw new Error(`HTTP 錯誤狀態碼: ${response.status}`);
+                    
                     const result = await response.json();
-                    if (result.status === "success" || true) { 
+                    
+                    // 修正您原始代碼中的邏輯錯誤 (原本寫死了 || true)
+                    if (result.status === "success" || result.status === "warning") { 
                         photos[i].uploaded = true; 
                         successCount++; 
+                        if (result.status === "warning") {
+                            console.warn("後端警告：", result.message);
+                        }
+                    } else {
+                        throw new Error(result.message);
                     }
-                } catch (err) { console.error("上傳失敗", err); photos[i].uploaded = true; successCount++; } 
+                } catch (err) { 
+                    hasError = true;
+                    // ⚠️ 如果網路被擋住，這裡會強制彈窗並且中斷迴圈，按鈕會復原！
+                    alert(`上傳失敗！\n1. 請確認 GAS 部署權限是否為「所有人」。\n2. 錯誤訊息：${err.message}`);
+                    break; // 停止上傳剩餘照片
+                } 
             }
 
-            inspectionPhotos[storageKey] = photos.filter(p => !p.uploaded);
-            if (inspectionPhotos[storageKey].length === 0) delete inspectionPhotos[storageKey];
+            if (successCount > 0) {
+                inspectionPhotos[storageKey] = photos.filter(p => !p.uploaded);
+                if (inspectionPhotos[storageKey].length === 0) delete inspectionPhotos[storageKey];
 
-            if (!inspectionState[currentItemId]) inspectionState[currentItemId] = { H1: false, H2: false, done: false };
-            if (poiData.category === '雜草') inspectionState[currentItemId].done = true;
-            else inspectionState[currentItemId][currentPeriod] = true;
+                if (!inspectionState[currentItemId]) inspectionState[currentItemId] = { H1: false, H2: false, done: false };
+                if (poiData.category === '雜草') inspectionState[currentItemId].done = true;
+                else inspectionState[currentItemId][currentPeriod] = true;
 
-            saveState(); renderPhotos(); updateBottomSheetStatus();
-            
+                saveState(); renderPhotos(); updateBottomSheetStatus();
+                alert(`✅ 成功上傳 ${successCount} 張照片！`);
+            }
+
+            // 復原按鈕狀態
             if (btn) { 
                 btn.disabled = false; btn.classList.remove('opacity-50'); 
                 const btnLabel = poiData.category === '雜草' ? '雜草' : (currentPeriod === 'H1' ? '上半年' : '下半年');
                 btn.innerHTML = `<i class="ph-fill ph-cloud-arrow-up text-lg text-sky-400"></i> 上傳照片並填寫【${btnLabel}】報表`; 
             }
-            
-            alert(`✅ 照片已成功上傳，並已自動填寫 Google 試算表！`);
         }
 
-        // ------------------ 預覽器與其他 UI ------------------
         function openLightbox(url) {
             const lb = document.getElementById('lightbox');
             const img = document.getElementById('lightbox-img');
