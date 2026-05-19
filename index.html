@@ -93,7 +93,7 @@
         </div>
         <h1 class="text-3xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500 mb-2">髒亂點巡檢</h1>
         <p class="text-slate-400 tracking-widest text-sm uppercase">115年 廢棄物/菸蒂/雜草</p>
-        <p class="text-sm text-red-500 font-bold mt-2 shadow-black">v3.0 終極修復版</p>
+        <p class="text-sm text-red-500 font-bold mt-2 shadow-black">v3.1 終極修復版</p>
         
         <div id="loading-status" class="mt-12 text-sky-400 text-sm animate-pulse flex items-center gap-2">
             <i class="ph ph-spinner animate-spin text-lg"></i> 載入 KML 圖資中...
@@ -117,7 +117,7 @@
             </div>
             <h2 class="text-xl font-bold text-white mb-2 tracking-widest">系統登入</h2>
             <p class="text-slate-400 text-sm mb-2">請輸入授權碼以存取巡檢資料</p>
-            <p class="text-xs text-red-500 font-bold mb-6">v3.0 終極修復版</p>
+            <p class="text-xs text-red-500 font-bold mb-6">v3.1 終極修復版</p>
             <input type="password" id="pwd-input" placeholder="請輸入密碼" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white text-center tracking-widest focus:outline-none focus:border-sky-400 mb-2 transition-colors">
             <p id="pwd-error" class="text-red-400 text-xs mb-4 h-4 opacity-0 transition-opacity">密碼錯誤，請重新輸入</p>
             <button id="btn-login" onclick="checkPassword()" class="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold py-3 px-4 rounded-xl shadow-[0_0_15px_rgba(14,165,233,0.4)] transition-all active:scale-95 tracking-widest cursor-pointer flex justify-center items-center gap-2">
@@ -355,9 +355,9 @@
         }
 
         // ==========================================
-        // 🚨 系統參數與狀態 (請確認此網址是否正確)
+        // 🚨 系統參數與狀態 (已更新為最新後端網址)
         // ==========================================
-        const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLHvYPz6eJoiWOAXpGL-tFInwel8EnaHUYXPNHR04Z10n_FcI-zxALMfHCRzn5xg-TnA/exec"; 
+        const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMwTbzT29t_oBvnSmoHENNG5piiWbQHeE7BBU5gjPr9aitoeiTNKpZH9jyyjL7j6mE/exec"; 
         const SYSTEM_PASSWORD = "54004658";
 
         let mapData = {}; 
@@ -704,8 +704,6 @@
             document.getElementById('progress-percent').innerText = `${pct}%`;
             document.getElementById('progress-bar').style.width = `${pct}%`;
         }
-
-        // ------------------ 底部面板與打卡邏輯 ------------------
         
         function updateBottomSheetStatus() {
             if(!currentItemId || !currentTownshipId) return;
@@ -727,7 +725,7 @@
                 document.getElementById('upload-btn-text').innerText = `上傳照片並填寫【雜草】進度`;
                 
                 if (isDone) {
-                    btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-slate-800/80 border-slate-600 text-slate-400 cursor-pointer h-[50px] min-w-[80px]";
+                    btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-sky-600 border-sky-400 text-white cursor-pointer h-[50px] min-w-[80px]";
                     markIcon.className = "ph-fill ph-check-circle text-lg";
                     markText.innerText = "已結案";
                 } else {
@@ -742,7 +740,7 @@
                 document.getElementById('upload-btn-text').innerText = `上傳照片並填寫【${currentPeriod === 'H1' ? '上半年' : '下半年'}】報表`;
                 
                 if (isDone) {
-                    btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-slate-800/80 border-slate-600 text-slate-400 cursor-pointer h-[50px] min-w-[80px]";
+                    btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-sky-600 border-sky-400 text-white cursor-pointer h-[50px] min-w-[80px]";
                     markIcon.className = "ph-fill ph-check-circle text-lg";
                     markText.innerText = "已巡檢";
                 } else {
@@ -754,7 +752,7 @@
         }
 
         // ==========================================
-        // 🚨 終極除錯優化 1：強制捕捉狀態按鈕錯誤並彈窗
+        // 🚨 強制捕捉狀態按鈕錯誤並彈窗
         // ==========================================
         async function toggleItemStatus() {
             if(!currentItemId || !currentTownshipId) return;
@@ -823,7 +821,6 @@
                     btn.className = originalClassName; markIcon.className = originalIconClass; markText.innerText = originalText;
                 }
             } catch(e) { 
-                // ⚠️ 若卡住，這裡一定會跳出錯誤！
                 alert(`連線失敗！\n1. 您的後端 URL 是否正確？\n2. GAS 部署權限是否為「所有人」？\n3. 系統錯誤訊息：${e.message}`); 
                 btn.className = originalClassName; markIcon.className = originalIconClass; markText.innerText = originalText;
             }
@@ -973,7 +970,7 @@
         }
 
         // ==========================================
-        // 🚨 終極除錯優化 2：修正邏輯錯誤，並捕捉照片上傳的阻擋
+        // 🚨 修正邏輯錯誤，並捕捉照片上傳的阻擋
         // ==========================================
         async function uploadPhotosToDrive() {
             if (!currentItemId || !currentTownshipId) return;
@@ -1023,7 +1020,6 @@
                     
                     const result = await response.json();
                     
-                    // 修正您原始代碼中的邏輯錯誤 (原本寫死了 || true)
                     if (result.status === "success" || result.status === "warning") { 
                         photos[i].uploaded = true; 
                         successCount++; 
