@@ -471,6 +471,7 @@
             
             const folders = xmlDoc.getElementsByTagName("Folder");
             mapData = {}; 
+            let globalPointIndex = 0; // 新增：加入全域流水號，確保每個點位 ID 絕對唯一
 
             Array.from(folders).forEach(folder => {
                 const folderNameNode = folder.getElementsByTagName("name")[0];
@@ -505,10 +506,10 @@
                         const valNode = data.getElementsByTagName("value")[0];
                         const val = valNode ? valNode.textContent.trim() : "";
 
-                        // 關鍵修正：使用 .includes() 進行模糊比對，避免 KML 隱藏字元導致比對失敗
+                        // 使用 .includes() 進行模糊比對
                         if (nameAttr === "案件數") idRaw = val;
                         else if (nameAttr.includes("鄉鎮") || nameAttr.includes("行政區")) township = val;
-                        else if (nameAttr.includes("地點")) location = val; // 精準捕捉「地點/地號」與各種變形
+                        else if (nameAttr.includes("地點")) location = val; 
                         else if (nameAttr === "地段" || nameAttr.includes("地段")) landSec = val;
                         else if (nameAttr === "地號" || nameAttr.includes("地號")) landNum = val;
                         else if (nameAttr.includes("權責")) agency = val;
@@ -518,20 +519,17 @@
 
                     const townshipKey = township.substring(0, 3);
                     if (!townshipKey) return;
-                    const uniqueId = `${category}_${idRaw}`;
-
-                    // 重點更新：確保廢棄物/菸蒂正確讀取地點，雜草維持地段+地號邏輯
-                    let finalName = "";
                     
-                    // 過濾掉無意義的預設 KML 名稱 (如: "點", "Point")
+                    // 關鍵修正：在 ID 後面加上遞增的流水號，保證清單點擊時絕對不會認錯點位
+                    const uniqueId = `${category}_${idRaw}_${globalPointIndex++}`;
+
+                    let finalName = "";
                     let validPmName = (pmName && !pmName.startsWith("點") && !pmName.toLowerCase().startsWith("point") && pmName !== "未命名地點") ? pmName : "";
                     let landStr = [landSec, landNum].filter(Boolean).join(' ');
 
                     if (category === '雜草') {
-                        // 雜草：完美保留原本的地段地號邏輯
                         finalName = landStr || location || validPmName || "未提供地段地號";
                     } else {
-                        // 一般廢棄物/菸蒂：強制優先使用「地點/地號」(location變數)，如果沒有才找 KML 標籤或地段地號
                         finalName = location || validPmName || landStr || "未提供地點";
                     }
 
