@@ -316,17 +316,12 @@
         };
         document.getElementById('dynamic-manifest').href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifestData));
 
-        const swCode = `
-            self.addEventListener('install', (e) => self.skipWaiting());
-            self.addEventListener('activate', (e) => {
-                e.waitUntil(caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))));
-                self.clients.claim();
-            });
-            self.addEventListener('fetch', (e) => {}); 
-        `;
-        const swBlob = new Blob([swCode], { type: 'application/javascript' });
+        // 移除不支援的 blob: Service Worker 註冊方式，避免產生 TypeError。
+        // 若未來需要啟用 PWA 離線快取，請在同目錄下建立真實的 sw.js 檔案即可。
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register(URL.createObjectURL(swBlob)).then(reg => reg.update()).catch(console.error);
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => reg.update())
+                .catch(err => console.log('提示: 若需完整 PWA 體驗，請於伺服器根目錄建立 sw.js 檔案。'));
         }
 
         let deferredPrompt;
