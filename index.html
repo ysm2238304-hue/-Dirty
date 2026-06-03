@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
+    <!-- 強制瀏覽器不快取，確保拿到最新代碼 -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
@@ -22,21 +23,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- ✅ 優化5: 地圖標記叢集化 CDN -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
-    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-    
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
 
-        /* ✅ 優化1: 字體 fallback */
         html, body { 
             width: 100vw; height: 100dvh; 
-            font-family: 'Noto Sans TC', -apple-system, 'PingFang TC', 'Microsoft JhengHei', 'Heiti TC', sans-serif; 
+            font-family: 'Noto Sans TC', sans-serif; 
             background-color: #020617; color: #f8fafc; 
             margin: 0; padding: 0; overflow: hidden; 
             overscroll-behavior: none; 
@@ -67,9 +61,11 @@
 
         .safe-top-padding { padding-top: max(1rem, env(safe-area-inset-top)); }
         
+        /* Lightbox */
         #lightbox { transition: opacity 0.3s ease; }
         #lightbox-img { transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease; }
 
+        /* Period & Category Toggle Switch */
         .period-toggle-bg { background-color: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); }
         .period-btn { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .period-btn.active { background-color: #0ea5e9; color: white; font-weight: bold; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4); }
@@ -79,19 +75,10 @@
         .category-pill.active { background-color: #0ea5e9; color: white; border-color: #38bdf8; font-weight: bold; box-shadow: 0 2px 10px rgba(14, 165, 233, 0.3); }
         .category-pill.inactive { background-color: rgba(30, 41, 59, 0.7); color: #94a3b8; border-color: #334155; }
 
+        /* Category specific styles */
         .badge-waste { background-color: rgba(71, 85, 105, 0.3); color: #94a3b8; border: 1px solid #475569; }
         .badge-cigarette { background-color: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.4); }
         .badge-weed { background-color: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
-        
-        .btn-disabled { opacity: 0.5; pointer-events: none; cursor: wait !important; }
-
-        /* ✅ 優化5: Marker Cluster 深色主題覆蓋 */
-        .marker-cluster-small { background-color: rgba(14, 165, 233, 0.3) !important; }
-        .marker-cluster-small div { background-color: rgba(14, 165, 233, 0.8) !important; color: #fff !important; font-weight: bold !important; }
-        .marker-cluster-medium { background-color: rgba(249, 115, 22, 0.3) !important; }
-        .marker-cluster-medium div { background-color: rgba(249, 115, 22, 0.8) !important; color: #fff !important; font-weight: bold !important; }
-        .marker-cluster-large { background-color: rgba(239, 68, 68, 0.3) !important; }
-        .marker-cluster-large div { background-color: rgba(239, 68, 68, 0.8) !important; color: #fff !important; font-weight: bold !important; }
     </style>
 </head>
 <body>
@@ -106,12 +93,13 @@
         </div>
         <h1 class="text-3xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500 mb-2">髒亂點巡檢</h1>
         <p class="text-slate-400 tracking-widest text-sm uppercase">115年 廢棄物/菸蒂/雜草</p>
-        <p class="text-sm text-sky-400 font-bold mt-2 shadow-black">v5.3 標記叢集優化版</p>
+        <p class="text-sm text-sky-400 font-bold mt-2 shadow-black">v5.1 進階填表優化版</p>
         
         <div id="loading-status" class="mt-12 text-sky-400 text-sm animate-pulse flex items-center gap-2">
             <i class="ph ph-spinner animate-spin text-lg"></i> 載入 KML 圖資中...
         </div>
         
+        <!-- 手動上傳 KML -->
         <div id="kml-upload-fallback" class="hidden mt-8 flex flex-col items-center">
             <p class="text-red-400 text-xs mb-3 font-bold bg-red-500/20 px-4 py-2 rounded-lg">無法自動讀取 KML，請手動選擇「115年南投縣髒亂點.kml」</p>
             <label class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-bold py-2 px-6 rounded-full cursor-pointer transition-colors shadow-lg flex items-center gap-2">
@@ -129,7 +117,7 @@
             </div>
             <h2 class="text-xl font-bold text-white mb-2 tracking-widest">系統登入</h2>
             <p class="text-slate-400 text-sm mb-2">請輸入授權碼以存取巡檢資料</p>
-            <p class="text-xs text-sky-400 font-bold mb-6">v5.3 標記叢集優化版</p>
+            <p class="text-xs text-sky-400 font-bold mb-6">v5.1 進階填表優化版</p>
             <input type="password" id="pwd-input" placeholder="請輸入密碼" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white text-center tracking-widest focus:outline-none focus:border-sky-400 mb-2 transition-colors">
             <p id="pwd-error" class="text-red-400 text-xs mb-4 h-4 opacity-0 transition-opacity">密碼錯誤，請重新輸入</p>
             <button id="btn-login" onclick="checkPassword()" class="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold py-3 px-4 rounded-xl shadow-[0_0_15px_rgba(14,165,233,0.4)] transition-all active:scale-95 tracking-widest cursor-pointer flex justify-center items-center gap-2">
@@ -166,8 +154,10 @@
     <!-- 3. UI 覆蓋層 -->
     <div id="ui-layer" class="absolute inset-0 z-10 pointer-events-none">
         
+        <!-- 頂部區塊 -->
         <div class="pointer-events-auto absolute top-0 left-0 w-full safe-top-padding px-4 pb-3 bg-gradient-to-b from-slate-950 via-slate-950/95 to-transparent z-[50]">
             
+            <!-- 類別切換器 -->
             <div class="flex gap-2 overflow-x-auto no-scrollbar py-2 mb-1 w-full touch-pan-x" id="category-selector">
                 <button class="category-pill active shrink-0 px-4 py-1.5 rounded-full text-xs border" onclick="setCategoryFilter('全部')">全部類別</button>
                 <button class="category-pill inactive shrink-0 px-4 py-1.5 rounded-full text-xs border flex items-center gap-1" onclick="setCategoryFilter('一般廢棄物')"><i class="ph-fill ph-trash"></i> 廢棄物</button>
@@ -175,6 +165,7 @@
                 <button class="category-pill inactive shrink-0 px-4 py-1.5 rounded-full text-xs border flex items-center gap-1" onclick="setCategoryFilter('雜草')"><i class="ph-fill ph-leaf"></i> 雜草</button>
             </div>
 
+            <!-- 上下半年切換開關 (若選雜草則隱藏) -->
             <div id="period-toggle-container" class="flex justify-center mb-3 transition-opacity duration-300">
                 <div class="period-toggle-bg p-1 rounded-full flex w-64 shadow-lg">
                     <button id="btn-period-h1" onclick="setPeriod('H1')" class="period-btn active flex-1 py-1.5 rounded-full text-sm flex justify-center items-center gap-1">
@@ -201,14 +192,17 @@
                 </div>
             </div>
 
+            <!-- 全局搜尋列 -->
             <div class="relative w-full mb-3">
                 <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
                 <input type="text" id="search-input" placeholder="搜尋建檔編號或地點名稱..." class="w-full bg-slate-800/80 border border-slate-700 rounded-full pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-sky-400 transition-colors" oninput="handleSearch()">
                 <div id="search-results" class="absolute top-full left-0 right-0 mt-1 bg-slate-800 rounded-xl shadow-2xl z-[60] hidden max-h-48 overflow-y-auto border border-slate-700"></div>
             </div>
             
+            <!-- 鄉鎮市橫向浮動按鈕 -->
             <div class="flex gap-2 overflow-x-auto no-scrollbar py-1 mb-2 w-full touch-pan-x" style="-webkit-overflow-scrolling: touch;" id="township-selector"></div>
 
+            <!-- 戰情進度儀表板 -->
             <div class="w-full px-1">
                 <div class="flex justify-between text-[11px] text-slate-400 font-bold mb-1">
                     <span id="progress-text">🏆 <span id="progress-period-label">上半年</span>達成率：0/0 點位</span>
@@ -261,8 +255,10 @@
                 </div>
                 
                 <div class="text-sm text-slate-300 mb-4 w-full bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 flex flex-col gap-2" id="sheet-desc">
+                    <!-- 詳細資訊 -->
                 </div>
                 
+                <!-- 原地圖點位參考照片 -->
                 <div class="mb-4 bg-slate-800/80 p-4 rounded-xl border border-slate-600/80 hidden" id="ref-photos-section">
                     <h4 class="text-sm font-bold text-slate-200 flex items-center gap-2 mb-3">
                         <i class="ph-fill ph-image text-emerald-400 text-lg"></i> 原地圖參考照片
@@ -270,6 +266,7 @@
                     <div id="ref-photo-grid" class="flex flex-col gap-2"></div>
                 </div>
 
+                <!-- 照片上傳區 -->
                 <div class="mb-5 bg-slate-800/50 p-4 rounded-xl border border-slate-700">
                     <div class="flex justify-between items-center mb-3">
                         <h4 class="text-sm font-bold text-slate-300 flex items-center gap-2">
@@ -299,25 +296,10 @@
         </button>
     </div>
 
+    <!-- ==========================================
+         JavaScript 核心邏輯 
+         ========================================== -->
     <script>
-        // ==========================================
-        // ✅ 優化3: API 超時保護函數
-        // ==========================================
-        function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-            
-            return fetch(url, {
-                ...options,
-                signal: controller.signal
-            }).finally(() => clearTimeout(timeoutId));
-        }
-
-        // ==========================================
-        // ✅ 優化2: 全域處理狀態鎖
-        // ==========================================
-        let isProcessing = false;
-
         // ------------------ PWA 及基本設定 ------------------
         const manifestData = {
             "name": "南投縣髒亂點巡查系統",
@@ -371,7 +353,7 @@
         }
 
         // ==========================================
-        // 系統參數與狀態
+        // 🚨 系統參數與狀態
         // ==========================================
         const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMwTbzT29t_oBvnSmoHENNG5piiWbQHeE7BBU5gjPr9aitoeiTNKpZH9jyyjL7j6mE/exec"; 
         const SYSTEM_PASSWORD = "54004658";
@@ -589,24 +571,22 @@
         // ------------------ 地圖核心 ------------------
         let map;
         let activeLayers = [];
-        // ✅ 優化5: 標記叢集群組
-        let markerClusterGroup = null;
         let currentBounds = null;
         let userMarker = null;
         let isListView = false;
 
         function createCategoryIcon(category, isDone) {
-            let iconClass, mainColor;
+            let iconClass, mainColor, glowColor, badgeClass;
             
             if (category === '一般廢棄物') {
-                iconClass = 'ph-trash'; mainColor = '#94a3b8';
+                iconClass = 'ph-trash'; mainColor = '#94a3b8'; glowColor = 'rgba(148,163,184,0.5)';
             } else if (category === '菸蒂') {
-                iconClass = 'ph-cigarette'; mainColor = '#f97316';
+                iconClass = 'ph-cigarette'; mainColor = '#f97316'; glowColor = 'rgba(249,115,22,0.5)';
             } else {
-                iconClass = 'ph-leaf'; mainColor = '#10b981';
+                iconClass = 'ph-leaf'; mainColor = '#10b981'; glowColor = 'rgba(16,185,129,0.5)';
             }
 
-            if (isDone) { mainColor = '#475569'; }
+            if (isDone) { mainColor = '#475569'; glowColor = 'transparent'; }
             const opacity = isDone ? 0.75 : 1;
             
             return L.divIcon({ 
@@ -641,38 +621,10 @@
             });
         }
 
-        // ✅ 優化5: 使用 MarkerClusterGroup 渲染地圖標記
         function drawMapForTownship(tId) {
             const bounds = [];
             const data = mapData[tId];
             if(!data || !data.points) return bounds;
-
-            // 清除舊的叢集圖層
-            if (markerClusterGroup) {
-                map.removeLayer(markerClusterGroup);
-                markerClusterGroup = null;
-            }
-
-            // 建立新的叢集圖層
-            markerClusterGroup = L.markerClusterGroup({
-                chunkedLoading: true,           // 分批載入，避免一次渲染太多卡頓
-                maxClusterRadius: 50,           // 聚合半徑（像素），越小越容易聚合
-                spiderfyOnMaxZoom: true,        // 最大縮放時點擊聚合展開成蜘蛛網
-                disableClusteringAtZoom: 16,    // 縮放到 16 層以上就不聚合
-                iconCreateFunction: function(cluster) {
-                    // 自訂聚合圖示樣式
-                    const count = cluster.getChildCount();
-                    let sizeClass = 'marker-cluster-small';
-                    if (count >= 10 && count < 30) sizeClass = 'marker-cluster-medium';
-                    else if (count >= 30) sizeClass = 'marker-cluster-large';
-                    
-                    return L.divIcon({ 
-                        html: `<div><span>${count}</span></div>`, 
-                        className: `marker-cluster ${sizeClass}`, 
-                        iconSize: L.point(40, 40) 
-                    });
-                }
-            });
 
             data.points.forEach(poi => {
                 if (currentCategoryFilter !== '全部' && poi.category !== currentCategoryFilter) return;
@@ -680,7 +632,7 @@
                 const stateObj = inspectionState[poi.id] || { H1: false, H2: false, done: false };
                 const isDone = poi.category === '雜草' ? stateObj.done : stateObj[currentPeriod];
 
-                const marker = L.marker([poi.lat, poi.lng], { icon: createCategoryIcon(poi.category, isDone) });
+                const marker = L.marker([poi.lat, poi.lng], { icon: createCategoryIcon(poi.category, isDone) }).addTo(map);
                 
                 marker.on('click', (e) => {
                     L.DomEvent.stopPropagation(e);
@@ -694,15 +646,9 @@
                 else if (poi.category === '雜草') colorClass = 'text-emerald-400';
 
                 marker.bindTooltip(`<span class="${colorClass} font-bold">${poi.name}${isDone ? ' (已巡檢/結案)' : ''}</span>`, { permanent: true, direction: 'top', className: 'glass-tooltip', offset: [0, -35] });
-                
-                // ✅ 優化5: 加入叢集圖層而非直接加到地圖
-                markerClusterGroup.addLayer(marker);
                 activeLayers.push(marker); 
                 bounds.push([poi.lat, poi.lng]);
             });
-
-            // ✅ 優化5: 將叢集圖層加入地圖
-            map.addLayer(markerClusterGroup);
 
             return bounds;
         }
@@ -719,14 +665,7 @@
                 else btn.className = 'township-pill shrink-0 whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow border bg-slate-800/60 border-slate-700 text-slate-400 cursor-pointer hover:bg-slate-700';
             });
 
-            // ✅ 優化5: 清除舊圖層（包含叢集）
-            activeLayers.forEach(layer => map.removeLayer(layer)); 
-            activeLayers = [];
-            if (markerClusterGroup) {
-                map.removeLayer(markerClusterGroup);
-                markerClusterGroup = null;
-            }
-            
+            activeLayers.forEach(layer => map.removeLayer(layer)); activeLayers = [];
             if (!keepHighlight) hideBottomSheet(); 
 
             const bounds = drawMapForTownship(tId);
@@ -778,6 +717,7 @@
             const markIcon = document.getElementById('mark-icon');
             const periodText = document.getElementById('mark-period-text');
             
+            // 防呆保護：如果上傳按鈕的 span 不存在則不更新文字 (避免報錯)
             const uploadBtnTextEl = document.getElementById('upload-btn-text');
             
             if (poiData.category === '雜草') {
@@ -813,11 +753,8 @@
         }
 
         async function toggleItemStatus() {
-            if (isProcessing) return;
             if(!currentItemId || !currentTownshipId) return;
-            
             const poiData = mapData[currentTownshipId].points.find(p => p.id === currentItemId);
-            if(!poiData) return;
             
             if (!inspectionState[currentItemId]) {
                 inspectionState[currentItemId] = { H1: false, H2: false, done: false };
@@ -838,8 +775,6 @@
             const originalIconClass = markIcon.className;
             const originalText = markText.innerText;
 
-            isProcessing = true;
-            btn.disabled = true;
             btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-slate-800 border-slate-700 text-sky-400 cursor-wait h-[50px] min-w-[80px]";
             markIcon.className = "ph ph-spinner animate-spin text-lg";
             markText.innerText = '同步中...';
@@ -848,7 +783,7 @@
             const apiStatus = poiData.category === '雜草' ? (newState ? '已結案' : '未處理') : (newState ? '已巡檢' : '未巡檢');
 
             try {
-                const response = await fetchWithTimeout(GOOGLE_APP_SCRIPT_URL, {
+                const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({
@@ -860,7 +795,7 @@
                         township: mapData[currentTownshipId].name,
                         pointName: poiData.name
                     })
-                }, 15000);
+                });
 
                 if (!response.ok) throw new Error(`HTTP 錯誤狀態碼: ${response.status}`);
                 
@@ -884,15 +819,8 @@
                     btn.className = originalClassName; markIcon.className = originalIconClass; markText.innerText = originalText;
                 }
             } catch(e) { 
-                if (e.name === 'AbortError') {
-                    alert('⏱️ 請求超時！\n請檢查網路連線後再試。');
-                } else {
-                    alert(`連線失敗！\n1. 您的後端 URL 是否正確？\n2. GAS 部署權限是否為「所有人」？\n3. 系統錯誤訊息：${e.message}`); 
-                }
+                alert(`連線失敗！\n1. 您的後端 URL 是否正確？\n2. GAS 部署權限是否為「所有人」？\n3. 系統錯誤訊息：${e.message}`); 
                 btn.className = originalClassName; markIcon.className = originalIconClass; markText.innerText = originalText;
-            } finally {
-                isProcessing = false;
-                btn.disabled = false;
             }
         }
 
@@ -1039,10 +967,11 @@
             saveState(); renderPhotos();
         }
 
+        // ==========================================
+        // 🚨 修復版的上傳照片邏輯 (try...catch...finally)
+        // ==========================================
         async function uploadPhotosToDrive() {
-            if (isProcessing) return;
             if (!currentItemId || !currentTownshipId) return;
-            
             const poiData = mapData[currentTownshipId].points.find(p => p.id === currentItemId);
             const storageKey = getStorageKey(currentItemId, poiData.category);
 
@@ -1053,7 +982,7 @@
             
             const btn = document.getElementById('btn-upload-drive');
             
-            isProcessing = true;
+            // 進入載入狀態
             if (btn) { 
                 btn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> <span>上傳並填寫報表中...</span>'; 
                 btn.disabled = true; 
@@ -1071,7 +1000,7 @@
                     const apiStatus = poiData.category === '雜草' ? '已結案' : '已巡檢';
                     const fileName = `${poiData.rawId}_${apiPeriod}_${Date.now()}.jpg`;
 
-                    const response = await fetchWithTimeout(GOOGLE_APP_SCRIPT_URL, {
+                    const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
                         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify({ 
                             action: 'upload_photo', 
@@ -1086,7 +1015,7 @@
                             pointName: poiData.name, 
                             agency: poiData.agency     
                         })
-                    }, 30000);
+                    });
                     
                     if (!response.ok) throw new Error(`HTTP 錯誤狀態碼: ${response.status}`);
                     
@@ -1102,14 +1031,10 @@
                         throw new Error(result.message);
                     }
                 }
-            } catch (err) {
-                if (err.name === 'AbortError') {
-                    alert('⏱️ 上傳請求超時！\n請檢查網路連線後再試。');
-                } else {
-                    alert(`上傳失敗！\n1. 請確認 GAS 部署權限是否為「所有人」。\n2. 錯誤訊息：${err.message}`);
-                }
+            } catch (err) { 
+                alert(`上傳失敗！\n1. 請確認 GAS 部署權限是否為「所有人」。\n2. 錯誤訊息：${err.message}`);
             } finally {
-                isProcessing = false;
+                // 無論成功或失敗，強制把按鈕的 span 結構加回去
                 if (btn) { 
                     btn.disabled = false; 
                     btn.classList.remove('opacity-50'); 
@@ -1126,12 +1051,13 @@
 
                     saveState(); 
                     renderPhotos(); 
-                    updateBottomSheetStatus();
+                    updateBottomSheetStatus(); // 此時按鈕結構已經復原，呼叫這個會將裡面的文字改成正確的
 
                     setTimeout(() => {
                         alert(`✅ 成功上傳 ${successCount} 張照片！`);
                     }, 150);
                 } else {
+                    // 如果都失敗了，至少文字也要變回預設狀態
                     updateBottomSheetStatus();
                 }
             }
