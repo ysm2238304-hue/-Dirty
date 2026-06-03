@@ -83,6 +83,24 @@
 </head>
 <body>
 
+    <!-- 終極自訂 Toast 通知系統 -->
+    <div id="toast-container" class="fixed top-24 left-1/2 -translate-x-1/2 z-[10000] flex flex-col gap-2 pointer-events-none w-11/12 max-w-sm"></div>
+
+    <!-- 終極自訂確認視窗 (Confirm Dialog) -->
+    <div id="confirm-modal" class="fixed inset-0 z-[10001] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-xs border border-slate-700 shadow-2xl flex flex-col items-center text-center">
+            <div class="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center mb-3">
+                <i class="ph-bold ph-question text-2xl text-amber-400"></i>
+            </div>
+            <h3 class="text-white font-bold text-lg mb-2" id="confirm-title">確認操作</h3>
+            <p class="text-slate-300 text-sm mb-6" id="confirm-message">您確定要執行此操作嗎？</p>
+            <div class="flex gap-3 w-full">
+                <button id="confirm-cancel-btn" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl text-sm transition-colors border border-slate-700 cursor-pointer">取消</button>
+                <button id="confirm-ok-btn" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 rounded-xl text-sm transition-colors cursor-pointer shadow-lg shadow-sky-500/25">確定</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 1. 歡迎與 KML 載入頁 -->
     <div id="splash-screen" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-slate-950">
         <div class="relative flex items-center justify-center w-32 h-32 mb-8">
@@ -93,7 +111,7 @@
         </div>
         <h1 class="text-3xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500 mb-2">髒亂點巡檢</h1>
         <p class="text-slate-400 tracking-widest text-sm uppercase">115年 廢棄物/菸蒂/雜草</p>
-        <p class="text-sm text-sky-400 font-bold mt-2 shadow-black">v5.1 進階填表優化版</p>
+        <p class="text-sm text-sky-400 font-bold mt-2 shadow-black">v5.2 欄位對齊終極版</p>
         
         <div id="loading-status" class="mt-12 text-sky-400 text-sm animate-pulse flex items-center gap-2">
             <i class="ph ph-spinner animate-spin text-lg"></i> 載入 KML 圖資中...
@@ -117,7 +135,7 @@
             </div>
             <h2 class="text-xl font-bold text-white mb-2 tracking-widest">系統登入</h2>
             <p class="text-slate-400 text-sm mb-2">請輸入授權碼以存取巡檢資料</p>
-            <p class="text-xs text-sky-400 font-bold mb-6">v5.1 進階填表優化版</p>
+            <p class="text-xs text-sky-400 font-bold mb-6">v5.2 欄位對齊終極版</p>
             <input type="password" id="pwd-input" placeholder="請輸入密碼" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white text-center tracking-widest focus:outline-none focus:border-sky-400 mb-2 transition-colors">
             <p id="pwd-error" class="text-red-400 text-xs mb-4 h-4 opacity-0 transition-opacity">密碼錯誤，請重新輸入</p>
             <button id="btn-login" onclick="checkPassword()" class="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold py-3 px-4 rounded-xl shadow-[0_0_15px_rgba(14,165,233,0.4)] transition-all active:scale-95 tracking-widest cursor-pointer flex justify-center items-center gap-2">
@@ -245,11 +263,11 @@
                         </div>
                         <h3 class="text-lg font-bold text-white leading-tight" id="sheet-title">點位名稱</h3>
                     </div>
-                    <button id="mark-btn" class="shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all border cursor-pointer h-[50px] min-w-[70px]" onclick="toggleItemStatus()">
+                    <button id="mark-btn" class="shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all border cursor-pointer h-[55px] min-w-[90px]" onclick="toggleItemStatus()">
                         <span class="text-[10px] opacity-70 leading-none" id="mark-period-text">上半年</span>
                         <div class="flex items-center gap-1 mt-0.5">
                             <i class="ph-fill ph-check-circle" id="mark-icon"></i> 
-                            <span id="mark-text" class="leading-none">未巡檢</span>
+                            <span id="mark-text" class="leading-none">未改善</span>
                         </div>
                     </button>
                 </div>
@@ -300,7 +318,66 @@
          JavaScript 核心邏輯 
          ========================================= -->
     <script>
-        // ------------------ PWA 及基本設定 ------------------
+        // ------------------ 終極自訂對話框系統 (取代原生的 alert 與 confirm) ------------------
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgClass = 'bg-slate-900/95 text-white border-slate-700';
+            let iconClass = 'ph-fill ph-info text-sky-400';
+            if (type === 'success') {
+                bgClass = 'bg-emerald-950/95 text-emerald-100 border-emerald-500/30';
+                iconClass = 'ph-fill ph-check-circle text-emerald-400';
+            } else if (type === 'error') {
+                bgClass = 'bg-rose-950/95 text-rose-100 border-rose-500/30';
+                iconClass = 'ph-fill ph-x-circle text-rose-400';
+            } else if (type === 'warning') {
+                bgClass = 'bg-amber-950/95 text-amber-100 border-amber-500/30';
+                iconClass = 'ph-fill ph-warning text-amber-400';
+            }
+
+            toast.className = `flex items-start gap-3 p-4 rounded-2xl border backdrop-blur-xl shadow-2xl transition-all duration-300 translate-y-4 opacity-0 pointer-events-auto ${bgClass}`;
+            toast.innerHTML = `
+                <i class="${iconClass} text-xl shrink-0 mt-0.5"></i>
+                <div class="text-sm font-medium leading-relaxed flex-1">${message.replace(/\n/g, '<br>')}</div>
+            `;
+            container.appendChild(toast);
+            
+            // 進場動畫
+            setTimeout(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            }, 50);
+
+            // 4秒後自動退場
+            setTimeout(() => {
+                toast.classList.add('translate-y-[-10px]', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function showConfirm(title, message, onConfirm) {
+            const modal = document.getElementById('confirm-modal');
+            const titleEl = document.getElementById('confirm-title');
+            const messageEl = document.getElementById('confirm-message');
+            const cancelBtn = document.getElementById('confirm-cancel-btn');
+            const okBtn = document.getElementById('confirm-ok-btn');
+
+            titleEl.innerText = title;
+            messageEl.innerText = message;
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); }, 10);
+
+            const closeFn = () => {
+                modal.classList.add('opacity-0');
+                setTimeout(() => { modal.classList.add('hidden'); }, 300);
+            };
+
+            cancelBtn.onclick = () => { closeFn(); };
+            okBtn.onclick = () => { closeFn(); onConfirm(); };
+        }
+
+        // ------------------ PWA 離線安裝設定 ------------------
         const manifestData = {
             "name": "南投縣髒亂點巡查系統",
             "short_name": "髒亂點巡檢",
@@ -319,7 +396,7 @@
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
                 .then(reg => reg.update())
-                .catch(err => console.log('提示: 若需完整 PWA 體驗，請於伺服器根目錄建立 sw.js 檔案。'));
+                .catch(err => console.log('提示: 若需離線體驗，請於主機根目錄配置 sw.js 檔案。'));
         }
 
         let deferredPrompt;
@@ -440,10 +517,10 @@
             return category === '雜草' ? `${poiId}_weed` : `${poiId}_${currentPeriod}`;
         }
 
-        // ------------------ KML 解析與資料建構（已優化突破快取） ------------------
+        // ------------------ KML 解析與資料建構（強效防快取設計） ------------------
         async function loadKMLData() {
             try {
-                // 利用動態時間戳記與 no-store，全面清除 GitHub CDN 及瀏覽器快取，並增加 URL 安全編碼
+                // 利用動態時間戳記與 no-store 請求標頭，全面繞過 GitHub CDN 伺服器的快取延遲！
                 const timestamp = new Date().getTime();
                 const safeUrl = encodeURI('115年南投縣髒亂點.kml') + `?t=${timestamp}`;
                 
@@ -558,7 +635,7 @@
             });
             
             if (Object.keys(mapData).length === 0) {
-                alert("⚠️ 系統未能從 KML 中解析到對應圖層資料！請確認 KML 內容。");
+                showToast("⚠️ 系統未能從 KML 中解析到對應圖層資料！請確認 KML 內容是否完整。", "warning");
             }
             
             if (localStorage.getItem('nantou_messy_system_auth') === 'true') {
@@ -652,7 +729,7 @@
                 else if (poi.category === '菸蒂') colorClass = 'text-orange-400';
                 else if (poi.category === '雜草') colorClass = 'text-emerald-400';
 
-                marker.bindTooltip(`<span class="${colorClass} font-bold">${poi.name}${isDone ? ' (已巡檢/結案)' : ''}</span>`, { permanent: true, direction: 'top', className: 'glass-tooltip', offset: [0, -35] });
+                marker.bindTooltip(`<span class="${colorClass} font-bold">${poi.name}${isDone ? ' (已完成)' : ''}</span>`, { permanent: true, direction: 'top', className: 'glass-tooltip', offset: [0, -35] });
                 activeLayers.push(marker); 
                 bounds.push([poi.lat, poi.lng]);
             });
@@ -732,11 +809,11 @@
                 if (uploadBtnTextEl) uploadBtnTextEl.innerText = `上傳照片並填寫【雜草】進度`;
                 
                 if (isDone) {
-                    btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-sky-600 border-sky-400 text-white cursor-pointer h-[50px] min-w-[80px]";
+                    btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-emerald-600 border-emerald-400 text-white cursor-pointer h-[55px] min-w-[90px]";
                     markIcon.className = "ph-fill ph-check-circle text-lg";
                     markText.innerText = "已結案";
                 } else {
-                    btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-slate-800 border-slate-600 text-slate-300 cursor-pointer h-[50px] min-w-[80px]";
+                    btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-slate-800 border-slate-600 text-slate-300 cursor-pointer h-[55px] min-w-[90px]";
                     markIcon.className = "ph-fill ph-warning-circle text-lg";
                     markText.innerText = "未處理";
                 }
@@ -747,13 +824,13 @@
                 if (uploadBtnTextEl) uploadBtnTextEl.innerText = `上傳照片並填寫【${currentPeriod === 'H1' ? '上半年' : '下半年'}】報表`;
                 
                 if (isDone) {
-                    btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-sky-600 border-sky-400 text-white cursor-pointer h-[50px] min-w-[80px]";
+                    btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-emerald-600 border-emerald-400 text-white cursor-pointer h-[55px] min-w-[90px]";
                     markIcon.className = "ph-fill ph-check-circle text-lg";
-                    markText.innerText = "已巡檢";
+                    markText.innerText = "已改善";
                 } else {
-                    btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-slate-800 border-slate-600 text-slate-300 cursor-pointer h-[50px] min-w-[80px]";
+                    btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-slate-800 border-slate-600 text-slate-300 cursor-pointer h-[55px] min-w-[90px]";
                     markIcon.className = "ph-fill ph-warning-circle text-lg";
-                    markText.innerText = "未巡檢";
+                    markText.innerText = "未改善";
                 }
             }
         }
@@ -781,12 +858,13 @@
             const originalIconClass = markIcon.className;
             const originalText = markText.innerText;
 
-            btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-slate-800 border-slate-700 text-sky-400 cursor-wait h-[50px] min-w-[80px]";
+            btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-slate-800 border-slate-700 text-sky-400 cursor-wait h-[55px] min-w-[90px]";
             markIcon.className = "ph ph-spinner animate-spin text-lg";
             markText.innerText = '同步中...';
 
             const apiPeriod = poiData.category === '雜草' ? 'None' : currentPeriod;
-            const apiStatus = poiData.category === '雜草' ? (newState ? '已結案' : '未處理') : (newState ? '已巡檢' : '未巡檢');
+            // 🚦 精準對應：H1/H2 寫入「已改善」或「未改善」；雜草寫入「已結案」或「未處理」
+            const apiStatus = poiData.category === '雜草' ? (newState ? '已結案' : '未處理') : (newState ? '已改善' : '未改善');
 
             try {
                 const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
@@ -818,14 +896,16 @@
                     updateBottomSheetStatus();
                     
                     if (result.status === "warning") {
-                        alert(`⚠️ 試算表警報：\n${result.message}`);
+                        showToast(`⚠️ 試算表同步警告：\n${result.message}`, "warning");
+                    } else {
+                        showToast(`✅ 狀態已同步更新為：【${apiStatus}】`, "success");
                     }
                 } else {
-                    alert(`⚠️ 後端拒絕更新：\n${result.message}`);
+                    showToast(`⚠️ 同步被拒絕：\n${result.message}`, "error");
                     btn.className = originalClassName; markIcon.className = originalIconClass; markText.innerText = originalText;
                 }
             } catch(e) { 
-                alert(`連線失敗！\n1. 您的後端 URL 是否正確？\n2. GAS 部署權限是否為「所有人」？\n3. 系統錯誤訊息：${e.message}`); 
+                showToast(`❌ 同步連線失敗！\n1. 請確認 GAS 部署權限是否為「所有人」\n2. 錯誤訊息：${e.message}`, "error");
                 btn.className = originalClassName; markIcon.className = originalIconClass; markText.innerText = originalText;
             }
         }
@@ -965,12 +1045,13 @@
         }
 
         function deletePhoto(photoId) {
-            if(!confirm("確定要刪除這張尚未上傳的照片嗎？")) return;
-            const poiData = mapData[currentTownshipId].points.find(p => p.id === currentItemId);
-            const storageKey = getStorageKey(currentItemId, poiData.category);
-            
-            inspectionPhotos[storageKey] = inspectionPhotos[storageKey].filter(p => p.id !== photoId);
-            saveState(); renderPhotos();
+            showConfirm("刪除照片", "確定要刪除這張尚未上傳的照片嗎？", () => {
+                const poiData = mapData[currentTownshipId].points.find(p => p.id === currentItemId);
+                const storageKey = getStorageKey(currentItemId, poiData.category);
+                
+                inspectionPhotos[storageKey] = inspectionPhotos[storageKey].filter(p => p.id !== photoId);
+                saveState(); renderPhotos();
+            });
         }
 
         async function uploadPhotosToDrive() {
@@ -981,7 +1062,7 @@
             const photos = inspectionPhotos[storageKey] || [];
             const pendingPhotos = photos.filter(p => !p.uploaded);
             
-            if (pendingPhotos.length === 0) return alert("目前沒有需要上傳的新照片！");
+            if (pendingPhotos.length === 0) return showToast("⚠️ 目前沒有需要上傳的新照片！", "warning");
             
             const btn = document.getElementById('btn-upload-drive');
             
@@ -999,9 +1080,8 @@
                     const base64Data = photos[i].data.split(',')[1];
                     
                     const apiPeriod = poiData.category === '雜草' ? 'None' : currentPeriod;
-                    
-                    // 💡 修復了前一版的錯字：將 'Macro' 改回 '已巡檢'
-                    const apiStatus = poiData.category === '雜草' ? '已結案' : '已巡檢';
+                    // 🚦 狀態精準匹配：寫入「已改善」或「已結案」
+                    const apiStatus = poiData.category === '雜草' ? '已結案' : '已改善';
                     
                     const fileName = `${poiData.rawId}_${apiPeriod}_${Date.now()}.jpg`;
 
@@ -1037,7 +1117,7 @@
                     }
                 }
             } catch (err) { 
-                alert(`上傳失敗！\n1. 請確認 GAS 部署權限是否為「所有人」。\n2. 錯誤訊息：${err.message}`);
+                showToast(`❌ 上傳失敗！\n1. 請確認 GAS 部署權限為「所有人」\n2. 錯誤資訊：${err.message}`, "error");
             } finally {
                 if (btn) { 
                     btn.disabled = false; 
@@ -1058,7 +1138,7 @@
                     updateBottomSheetStatus();
 
                     setTimeout(() => {
-                        alert(`✅ 成功上傳 ${successCount} 張照片！`);
+                        showToast(`✅ 成功上傳 ${successCount} 張現場照片！試算表打卡成功！`, "success");
                     }, 150);
                 } else {
                     updateBottomSheetStatus();
@@ -1084,7 +1164,7 @@
             img.onload = () => { loading.style.display = 'none'; img.style.opacity = '1'; img.classList.remove('scale-95'); img.classList.add('scale-100'); };
             img.onerror = () => {
                 if (img.src === proxyUrl) img.src = cleanUrl;
-                else loading.innerHTML = '<i class="ph-fill ph-warning-circle text-5xl text-red-500"></i><span class="text-sm font-bold text-red-400 mt-2 text-center leading-relaxed">圖片載入失敗<br>遭到瀏覽器安全性阻擋</span>';
+                else loading.innerHTML = '<i class="ph-fill ph-warning-circle text-5xl text-red-500"></i><span class="text-sm font-bold text-red-400 mt-2 text-center leading-relaxed">圖片載入失敗<br>遭瀏覽器安全阻擋</span>';
             };
             img.src = proxyUrl;
         }
@@ -1147,7 +1227,7 @@
                                 <div class="text-xs text-slate-400 mb-1 flex flex-wrap gap-2 items-center">
                                     <span class="${badgeClass} px-2 py-0.5 rounded text-[10px] font-bold">${poi.category}</span>
                                     <span class="bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-slate-300">#${poi.rawId}</span>
-                                    ${isDone ? '<span class="text-slate-400"><i class="ph-fill ph-check-circle"></i> 已巡檢/結案</span>' : ''}
+                                    ${isDone ? '<span class="text-emerald-400 font-bold"><i class="ph-fill ph-check-circle"></i> 已改善/結案</span>' : ''}
                                 </div>
                                 <h4 class="text-white font-bold text-base line-clamp-1">${poi.name}</h4>
                                 <div class="text-[11px] text-slate-500 mt-1">${poi.agency}</div>
@@ -1243,7 +1323,7 @@
             if (Object.keys(mapData).length > 0) {
                 loadTownship(Object.keys(mapData)[0]); 
             } else {
-                alert("KML 內未發現任何點位資料！");
+                showToast("⚠️ 圖資庫內未發現點位資料！", "warning");
             }
         }
 
@@ -1254,8 +1334,11 @@
                 document.getElementById('btn-login').innerHTML = '<i class="ph ph-spinner animate-spin text-xl"></i> 載入系統中...';
                 localStorage.setItem('nantou_messy_system_auth', 'true');
                 await performSyncAndEnter();
+                showToast("🔓 密碼核對成功！歡迎進入巡查戰情系統。", "success");
             } else {
-                document.getElementById('pwd-error').style.opacity = '1'; document.getElementById('pwd-input').value = '';
+                document.getElementById('pwd-error').style.opacity = '1'; 
+                document.getElementById('pwd-input').value = '';
+                showToast("❌ 授權碼不正確，請重新確認！", "error");
             }
         }
 
@@ -1267,7 +1350,7 @@
         function locateUser() {
             const btnIcon = document.querySelector('#locate-btn i');
             if(btnIcon) btnIcon.className = "ph ph-spinner animate-spin text-2xl text-sky-400"; 
-            if (!navigator.geolocation) return alert("瀏覽器不支援定位功能！");
+            if (!navigator.geolocation) return showToast("❌ 您的手機或瀏覽器不支援 GPS 定位功能！", "error");
             
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
@@ -1276,10 +1359,14 @@
                     if (map) {
                         userMarker = L.marker([lat, lng], { icon: L.divIcon({ className: 'custom-user-icon', html: `<div class="relative"><div class="user-pulse"></div><div class="user-location-marker"></div></div>`, iconSize: [16, 16], iconAnchor: [8, 8] }), zIndexOffset: 1000 }).addTo(map);
                         map.flyTo([lat, lng], 16, { animate: true, duration: 1.5 });
+                        showToast("📍 已成功獲取當前高精準度位置！", "success");
                     }
                     if(btnIcon) btnIcon.className = "ph-fill ph-crosshair text-2xl text-sky-400"; 
                 },
-                () => { alert("無法獲取您的位置！請確認已開啟 GPS 與權限。"); if(btnIcon) btnIcon.className = "ph-fill ph-crosshair text-2xl text-sky-400"; },
+                () => { 
+                    showToast("❌ GPS 定位失敗，請確認已在手機系統設定中開啟定位與授權！", "error"); 
+                    if(btnIcon) btnIcon.className = "ph-fill ph-crosshair text-2xl text-sky-400"; 
+                },
                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         }
