@@ -263,11 +263,12 @@
                         </div>
                         <h3 class="text-lg font-bold text-white leading-tight" id="sheet-title">點位名稱</h3>
                     </div>
+                    <!-- 填入/取消 巡檢日期按鈕 -->
                     <button id="mark-btn" class="shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all border cursor-pointer h-[55px] min-w-[90px]" onclick="toggleItemStatus()">
-                        <span class="text-[10px] opacity-70 leading-none" id="mark-period-text">上半年</span>
+                        <span class="text-[10px] opacity-70 leading-none" id="mark-period-text">上半年巡檢</span>
                         <div class="flex items-center gap-1 mt-0.5">
                             <i class="ph-fill ph-check-circle" id="mark-icon"></i> 
-                            <span id="mark-text" class="leading-none">未改善</span>
+                            <span id="mark-text" class="leading-none">未巡檢</span>
                         </div>
                     </button>
                 </div>
@@ -284,8 +285,8 @@
                     <div id="ref-photo-grid" class="flex flex-col gap-2"></div>
                 </div>
 
-                <!-- 照片上傳區 -->
-                <div class="mb-5 bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                <!-- 照片上傳區 (雜草案件會自動隱藏此區塊) -->
+                <div id="photo-upload-container" class="mb-5 bg-slate-800/50 p-4 rounded-xl border border-slate-700">
                     <div class="flex justify-between items-center mb-3">
                         <h4 class="text-sm font-bold text-slate-300 flex items-center gap-2">
                             <i class="ph-fill ph-camera text-sky-400 text-lg"></i> 現場拍攝
@@ -297,7 +298,7 @@
                     </div>
                     <div id="photo-preview-grid" class="grid grid-cols-3 gap-2 mb-3 empty:hidden"></div>
                     <button id="btn-upload-drive" onclick="uploadPhotosToDrive()" class="w-full bg-slate-700 hover:bg-slate-600 border border-slate-600 text-white text-sm font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors mt-2 cursor-pointer shadow-lg">
-                        <i class="ph-fill ph-cloud-arrow-up text-lg text-sky-400"></i> <span id="upload-btn-text">上傳照片並填寫【上半年】報表</span>
+                        <i class="ph-fill ph-cloud-arrow-up text-lg text-sky-400"></i> <span id="upload-btn-text">上傳照片並填入【上半年】巡檢日期</span>
                     </button>
                 </div>
 
@@ -800,37 +801,33 @@
             const markText = document.getElementById('mark-text');
             const markIcon = document.getElementById('mark-icon');
             const periodText = document.getElementById('mark-period-text');
-            
+            const uploadSection = document.getElementById('photo-upload-container');
             const uploadBtnTextEl = document.getElementById('upload-btn-text');
             
             if (poiData.category === '雜草') {
-                isDone = stateObj.done;
-                periodText.style.display = 'none'; 
-                if (uploadBtnTextEl) uploadBtnTextEl.innerText = `上傳照片並填寫【雜草】進度`;
-                
-                if (isDone) {
-                    btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-emerald-600 border-emerald-400 text-white cursor-pointer h-[55px] min-w-[90px]";
-                    markIcon.className = "ph-fill ph-check-circle text-lg";
-                    markText.innerText = "已結案";
-                } else {
-                    btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-slate-800 border-slate-600 text-slate-300 cursor-pointer h-[55px] min-w-[90px]";
-                    markIcon.className = "ph-fill ph-warning-circle text-lg";
-                    markText.innerText = "未處理";
-                }
+                // 🚀 雜草案件 100% 唯讀，直接隱藏打卡按鈕與上傳區塊
+                btn.style.display = 'none';
+                uploadSection.style.display = 'none';
             } else {
+                // 顯示打卡按鈕與上傳區塊
+                btn.style.display = 'flex';
+                uploadSection.style.display = 'block';
+
                 isDone = stateObj[currentPeriod];
                 periodText.style.display = 'block'; 
-                periodText.innerText = currentPeriod === 'H1' ? '上半年狀態' : '下半年狀態';
-                if (uploadBtnTextEl) uploadBtnTextEl.innerText = `上傳照片並填寫【${currentPeriod === 'H1' ? '上半年' : '下半年'}】報表`;
+                periodText.innerText = currentPeriod === 'H1' ? '上半年巡檢' : '下半年巡檢';
+                if (uploadBtnTextEl) {
+                    uploadBtnTextEl.innerText = `上傳照片並填入【${currentPeriod === 'H1' ? '上半年' : '下半年'}】巡檢日期`;
+                }
                 
                 if (isDone) {
                     btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-emerald-600 border-emerald-400 text-white cursor-pointer h-[55px] min-w-[90px]";
                     markIcon.className = "ph-fill ph-check-circle text-lg";
-                    markText.innerText = "已改善";
+                    markText.innerText = "已巡檢";
                 } else {
-                    btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-slate-800 border-slate-600 text-slate-300 cursor-pointer h-[55px] min-w-[90px]";
+                    btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-slate-800 border-slate-600 text-slate-400 cursor-pointer h-[55px] min-w-[90px]";
                     markIcon.className = "ph-fill ph-warning-circle text-lg";
-                    markText.innerText = "未改善";
+                    markText.innerText = "未巡檢";
                 }
             }
         }
@@ -839,16 +836,14 @@
             if(!currentItemId || !currentTownshipId) return;
             const poiData = mapData[currentTownshipId].points.find(p => p.id === currentItemId);
             
+            // 🚀 雜草案件直接排除，不允許觸發任何後端同步
+            if (poiData.category === '雜草') return;
+            
             if (!inspectionState[currentItemId]) {
                 inspectionState[currentItemId] = { H1: false, H2: false, done: false };
             }
             
-            let newState;
-            if (poiData.category === '雜草') {
-                newState = !inspectionState[currentItemId].done;
-            } else {
-                newState = !inspectionState[currentItemId][currentPeriod];
-            }
+            let newState = !inspectionState[currentItemId][currentPeriod];
 
             const btn = document.getElementById('mark-btn');
             const markText = document.getElementById('mark-text');
@@ -862,9 +857,8 @@
             markIcon.className = "ph ph-spinner animate-spin text-lg";
             markText.innerText = '同步中...';
 
-            const apiPeriod = poiData.category === '雜草' ? 'None' : currentPeriod;
-            // 🚦 精準狀態對應：前端打卡狀態。H1/H2 寫入「已改善/未改善」，雜草寫入「已結案/未處理」
-            const apiStatus = poiData.category === '雜草' ? (newState ? '已結案' : '未處理') : (newState ? '已改善' : '未改善');
+            // 🚀 直接傳送最乾淨的「填入」或「取消」指令
+            const apiAction = newState ? "填入" : "取消";
 
             try {
                 const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
@@ -873,9 +867,9 @@
                     body: JSON.stringify({
                         action: 'update_status',
                         category: poiData.category,
-                        period: apiPeriod,
+                        period: currentPeriod,
                         itemId: poiData.rawId,
-                        status: apiStatus,
+                        status: apiAction, // 填入 或 取消
                         township: mapData[currentTownshipId].name,
                         pointName: poiData.name
                     })
@@ -886,11 +880,7 @@
                 const result = await response.json();
                 
                 if (result.status === "success" || result.status === "warning") {
-                    if (poiData.category === '雜草') {
-                        inspectionState[currentItemId].done = newState;
-                    } else {
-                        inspectionState[currentItemId][currentPeriod] = newState;
-                    }
+                    inspectionState[currentItemId][currentPeriod] = newState;
                     
                     saveState(); 
                     updateBottomSheetStatus();
@@ -898,7 +888,7 @@
                     if (result.status === "warning") {
                         showToast(`⚠️ 試算表同步警告：\n${result.message}`, "warning");
                     } else {
-                        showToast(`✅ 狀態已成功更新！`, "success");
+                        showToast(`✅ 已成功【${apiAction}】巡檢日期！`, "success");
                     }
                 } else {
                     showToast(`⚠️ 同步被拒絕：\n${result.message}`, "error");
@@ -986,6 +976,10 @@
             if(!files.length || !currentItemId || !currentTownshipId) return;
 
             const poiData = mapData[currentTownshipId].points.find(p => p.id === currentItemId);
+            
+            // 🚀 雜草案件直接排除，不允許拍照
+            if (poiData.category === '雜草') return;
+
             const storageKey = getStorageKey(currentItemId, poiData.category);
 
             if (!inspectionPhotos[storageKey]) inspectionPhotos[storageKey] = [];
@@ -1021,6 +1015,8 @@
             if(!grid) return;
             
             const poiData = mapData[currentTownshipId].points.find(p => p.id === currentItemId);
+            if (poiData.category === '雜草') return; // 雜草不處理照片
+
             const storageKey = getStorageKey(currentItemId, poiData.category);
 
             if (inspectionPhotos[storageKey]) {
@@ -1057,6 +1053,10 @@
         async function uploadPhotosToDrive() {
             if (!currentItemId || !currentTownshipId) return;
             const poiData = mapData[currentTownshipId].points.find(p => p.id === currentItemId);
+            
+            // 🚀 雜草案件直接排除，不允許上傳
+            if (poiData.category === '雜草') return;
+
             const storageKey = getStorageKey(currentItemId, poiData.category);
 
             const photos = inspectionPhotos[storageKey] || [];
@@ -1079,20 +1079,16 @@
                     if (photos[i].uploaded) continue;
                     const base64Data = photos[i].data.split(',')[1];
                     
-                    const apiPeriod = poiData.category === '雜草' ? 'None' : currentPeriod;
-                    // 🚦 狀態精準對應：H1/H2 寫入「已改善」，雜草寫入「已結案」
-                    const apiStatus = poiData.category === '雜草' ? '已結案' : '已改善';
-                    
-                    const fileName = `${poiData.rawId}_${apiPeriod}_${Date.now()}.jpg`;
+                    const fileName = `${poiData.rawId}_${currentPeriod}_${Date.now()}.jpg`;
 
                     const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
                         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify({ 
                             action: 'upload_photo', 
                             category: poiData.category,    
-                            period: apiPeriod,         
+                            period: currentPeriod,         
                             itemId: poiData.rawId,         
-                            status: apiStatus,              
+                            status: "填入", // 🚀 照片上傳動作一律為「填入」巡檢日期
                             filename: fileName, 
                             mimeType: "image/jpeg", 
                             base64: base64Data,
@@ -1109,9 +1105,6 @@
                     if (result.status === "success" || result.status === "warning") { 
                         photos[i].uploaded = true; 
                         successCount++; 
-                        if (result.status === "warning") {
-                            console.warn("後端警告：", result.message);
-                        }
                     } else {
                         throw new Error(result.message);
                     }
@@ -1130,15 +1123,14 @@
                     if (inspectionPhotos[storageKey].length === 0) delete inspectionPhotos[storageKey];
 
                     if (!inspectionState[currentItemId]) inspectionState[currentItemId] = { H1: false, H2: false, done: false };
-                    if (poiData.category === '雜草') inspectionState[currentItemId].done = true;
-                    else inspectionState[currentItemId][currentPeriod] = true;
+                    inspectionState[currentItemId][currentPeriod] = true;
 
                     saveState(); 
                     renderPhotos(); 
                     updateBottomSheetStatus();
 
                     setTimeout(() => {
-                        showToast(`✅ 成功上傳 ${successCount} 張現場照片！試算表打卡成功！`, "success");
+                        showToast(`✅ 成功上傳 ${successCount} 張現場照片！巡檢日期已同步填入！`, "success");
                     }, 150);
                 } else {
                     updateBottomSheetStatus();
@@ -1175,6 +1167,7 @@
             setTimeout(() => { lb.classList.add('hidden'); document.getElementById('lightbox-img').src = ''; }, 300);
         }
 
+        // ------------------ 視角切換 ------------------
         function toggleView() {
             isListView = !isListView;
             const listEl = document.getElementById('list-view');
@@ -1227,7 +1220,7 @@
                                 <div class="text-xs text-slate-400 mb-1 flex flex-wrap gap-2 items-center">
                                     <span class="${badgeClass} px-2 py-0.5 rounded text-[10px] font-bold">${poi.category}</span>
                                     <span class="bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-slate-300">#${poi.rawId}</span>
-                                    ${isDone ? '<span class="text-emerald-400 font-bold"><i class="ph-fill ph-check-circle"></i> 已改善/結案</span>' : ''}
+                                    ${(poi.category !== '雜草' && isDone) ? '<span class="text-emerald-400 font-bold"><i class="ph-fill ph-check-circle"></i> 已巡檢</span>' : ''}
                                 </div>
                                 <h4 class="text-white font-bold text-base line-clamp-1">${poi.name}</h4>
                                 <div class="text-[11px] text-slate-500 mt-1">${poi.agency}</div>
@@ -1350,7 +1343,7 @@
         function locateUser() {
             const btnIcon = document.querySelector('#locate-btn i');
             if(btnIcon) btnIcon.className = "ph ph-spinner animate-spin text-2xl text-sky-400"; 
-            if (!navigator.geolocation) return showToast("❌ 您的手機或瀏覽器不支援 GPS 定位功能！", "error");
+            if (!navigator.geolocation) return showToast("❌ 您的手機不支援 GPS 定位功能！", "error");
             
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
