@@ -3,115 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    
     <meta name="referrer" content="no-referrer">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="髒亂點巡檢">
     <meta name="theme-color" content="#020617">
-    
     <link rel="manifest" id="dynamic-manifest">
-
-    <title>115年南投縣髒亂點巡查系統 v5.11</title>
-    
+    <title>115年南投縣髒亂點巡查系統 v5.12</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
-
-        html, body { 
-            width: 100vw; height: 100dvh; 
-            font-family: 'Noto Sans TC', sans-serif; 
-            background-color: #020617; color: #f8fafc; 
-            margin: 0; padding: 0; overflow: hidden; 
-            overscroll-behavior: none; 
-        }
-
+        html, body { width: 100vw; height: 100dvh; font-family: 'Noto Sans TC', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; padding: 0; overflow: hidden; overscroll-behavior: none; }
         .glass { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .glass-panel { background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.7); }
-
         #splash-screen, #login-screen { transition: opacity 0.5s ease-in-out; }
         .pulse-ring { animation: pulse 2s infinite cubic-bezier(0.215, 0.61, 0.355, 1); }
         @keyframes pulse { 0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 20px rgba(14, 165, 233, 0); } 100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); } }
-
         .leaflet-control-attribution { display: none !important; }
         .leaflet-control-zoom { border: none !important; margin-top: 250px !important; }
         .leaflet-bar a { background-color: rgba(30, 41, 59, 0.8) !important; color: #38bdf8 !important; border-color: rgba(255,255,255,0.1) !important;}
-
         .bottom-sheet { transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
         .bottom-sheet.hidden-sheet { transform: translateY(100%); }
-
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
         .glass-tooltip { background: rgba(15, 23, 42, 0.85) !important; backdrop-filter: blur(4px) !important; border: 1px solid rgba(255, 255, 255, 0.15) !important; color: #f8fafc !important; border-radius: 8px !important; padding: 5px 10px !important; font-size: 12px !important; font-weight: 500 !important; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5) !important; white-space: nowrap !important; }
-        
         .user-location-marker { background-color: #3b82f6; border: 2px solid white; border-radius: 50%; width: 16px; height: 16px; box-shadow: 0 0 15px rgba(59, 130, 246, 0.8); position: relative; z-index: 1000; }
         .user-pulse { position: absolute; top: -8px; left: -8px; width: 32px; height: 32px; background-color: rgba(59, 130, 246, 0.6); border-radius: 50%; animation: user-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite; }
         @keyframes user-ping { 75%, 100% { transform: scale(2); opacity: 0; } }
-
         .safe-top-padding { padding-top: max(1rem, env(safe-area-inset-top)); }
-        
         #lightbox { transition: opacity 0.3s ease; }
         #lightbox-img { transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease; }
-
-        .period-toggle-bg { background-color: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); }
-        .period-btn { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .period-btn.active { background-color: #0ea5e9; color: white; font-weight: bold; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4); }
-        .period-btn.inactive { color: #94a3b8; }
-
-        .category-pill { 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-        .category-pill:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-        }
-        .category-pill.active { 
-            background-color: #0ea5e9; 
-            color: white; 
-            border-color: #38bdf8; 
-            font-weight: bold; 
-            box-shadow: 0 0 15px rgba(14, 165, 233, 0.4);
-            transform: translateY(-2px);
-        }
-        .category-pill.inactive { 
-            background-color: rgba(30, 41, 59, 0.7); 
-            color: #94a3b8; 
-            border-color: #334155; 
-        }
-
-        .card-elevated {
-            background-color: #0f172a;
-            border: 1px solid #1e293b;
-            border-radius: 1.25rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
-            transition: all 0.2s ease;
-        }
-        .card-elevated:hover {
-            box-shadow: 0 15px 30px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(14, 165, 233, 0.3);
-            transform: translateY(-2px);
-        }
-
+        .period-toggle-bg { background-color: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        .period-btn { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; z-index: 1; }
+        .period-btn.active { background: linear-gradient(135deg, #0ea5e9, #3b82f6); color: white; font-weight: bold; box-shadow: 0 0 20px rgba(14, 165, 233, 0.5); transform: scale(1.02); }
+        .period-btn.inactive { color: #94a3b8; background: transparent; }
+        .period-btn.active::after { content: ''; position: absolute; bottom: -2px; left: 25%; right: 25%; height: 2px; background: #38bdf8; border-radius: 4px; box-shadow: 0 0 10px #38bdf8; }
+        .period-arrow { display: flex; align-items: center; justify-content: center; color: #475569; font-size: 14px; margin: 0 -4px; z-index: 2; }
+        .segmented-control { display: flex; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px); border-radius: 9999px; border: 1px solid rgba(255,255,255,0.1); padding: 2px; box-shadow: 0 6px 20px rgba(0,0,0,0.4); gap: 0; }
+        .segmented-btn { flex: 1; text-align: center; padding: 6px 0; border-radius: 9999px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1); background: transparent; color: #94a3b8; border: none; white-space: nowrap; position: relative; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .segmented-btn i { font-size: 14px; }
+        .segmented-btn.active { background: linear-gradient(135deg, #0ea5e9, #2563eb); color: white; box-shadow: 0 2px 12px rgba(14, 165, 233, 0.4); font-weight: 700; z-index: 2; transform: scale(1.03); }
+        .segmented-btn:not(.active):hover { color: #cbd5e1; background: rgba(255,255,255,0.05); }
+        .card-elevated { background-color: #0f172a; border: 1px solid #1e293b; border-radius: 1.25rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05); transition: all 0.2s ease; }
+        .card-elevated:hover { box-shadow: 0 15px 30px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(14, 165, 233, 0.3); transform: translateY(-2px); }
         .badge-waste { background-color: rgba(71, 85, 105, 0.3); color: #94a3b8; border: 1px solid #475569; }
         .badge-cigarette { background-color: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.4); }
         .badge-weed { background-color: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
     </style>
 </head>
 <body>
-
-    <!-- Toast / Confirm Modal / Splash / Login / Lightbox / PWA prompt 區塊與之前完全相同，此處省略以節省篇幅，請直接複製先前版本中的對應HTML -->
-    <!-- 為確保完整，這裡貼上完整HTML（包含所有區塊） -->
-
     <div id="toast-container" class="fixed top-24 left-1/2 -translate-x-1/2 z-[10000] flex flex-col gap-2 pointer-events-none w-11/12 max-w-sm"></div>
     <div id="confirm-modal" class="fixed inset-0 z-[10001] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
         <div class="glass-panel p-6 rounded-2xl w-full max-w-xs border border-slate-700 shadow-2xl flex flex-col items-center text-center">
@@ -132,7 +78,7 @@
         </div>
         <h1 class="text-3xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500 mb-2">髒亂點巡檢</h1>
         <p class="text-slate-400 tracking-widest text-sm uppercase">115年 廢棄物/菸蒂/雜草</p>
-        <p class="text-sm text-sky-400 font-bold mt-2 shadow-black">v5.11 整合巡檢視圖</p>
+        <p class="text-sm text-sky-400 font-bold mt-2 shadow-black">v5.12 視覺強化版</p>
         <div id="loading-status" class="mt-12 text-sky-400 text-sm animate-pulse flex items-center gap-2"><i class="ph ph-spinner animate-spin text-lg"></i> 載入 KML 圖資中...</div>
         <div id="kml-upload-fallback" class="hidden mt-8 flex flex-col items-center">
             <p class="text-red-400 text-xs mb-3 font-bold bg-red-500/20 px-4 py-2 rounded-lg">無法自動讀取 KML，請手動選擇「115年南投縣髒亂點.kml」</p>
@@ -145,7 +91,7 @@
             <div class="w-16 h-16 bg-sky-500/20 rounded-full flex items-center justify-center mb-4"><i class="ph-fill ph-lock-key text-3xl text-sky-400"></i></div>
             <h2 class="text-xl font-bold text-white mb-2 tracking-widest">系統登入</h2>
             <p class="text-slate-400 text-sm mb-2">請輸入授權碼以存取巡檢資料</p>
-            <p class="text-xs text-sky-400 font-bold mb-6">v5.11 整合巡檢視圖</p>
+            <p class="text-xs text-sky-400 font-bold mb-6">v5.12 視覺強化版</p>
             <input type="password" id="pwd-input" placeholder="請輸入密碼" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white text-center tracking-widest focus:outline-none focus:border-sky-400 mb-2 transition-colors">
             <p id="pwd-error" class="text-red-400 text-xs mb-4 h-4 opacity-0 transition-opacity">密碼錯誤，請重新輸入</p>
             <button id="btn-login" onclick="checkPassword()" class="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold py-3 px-4 rounded-xl shadow-[0_0_15px_rgba(14,165,233,0.4)] transition-all active:scale-95 tracking-widest cursor-pointer flex justify-center items-center gap-2">進入系統</button>
@@ -168,17 +114,18 @@
 
     <div id="ui-layer" class="absolute inset-0 z-10 pointer-events-none">
         <div class="pointer-events-auto absolute top-0 left-0 w-full safe-top-padding px-4 pb-3 bg-gradient-to-b from-slate-950 via-slate-950/95 to-transparent z-[50]">
-            <div class="flex gap-2 overflow-x-auto no-scrollbar py-2 mb-1 w-full touch-pan-x" id="category-selector">
-                <button class="category-pill active shrink-0 px-4 py-1.5 rounded-full text-xs border" onclick="setCategoryFilter('全部')">全部類別</button>
-                <button class="category-pill inactive shrink-0 px-4 py-1.5 rounded-full text-xs border flex items-center gap-1" onclick="setCategoryFilter('一般廢棄物')"><i class="ph-fill ph-trash"></i> 廢棄物</button>
-                <button class="category-pill inactive shrink-0 px-4 py-1.5 rounded-full text-xs border flex items-center gap-1" onclick="setCategoryFilter('菸蒂')"><i class="ph-fill ph-cigarette"></i> 菸蒂</button>
-                <button class="category-pill inactive shrink-0 px-4 py-1.5 rounded-full text-xs border flex items-center gap-1" onclick="setCategoryFilter('雜草')"><i class="ph-fill ph-leaf"></i> 雜草</button>
-                <button class="category-pill inactive shrink-0 px-4 py-1.5 rounded-full text-xs border flex items-center gap-1" onclick="setCategoryFilter('一般廢棄物+菸蒂')"><i class="ph-fill ph-trash text-xs"></i><i class="ph-fill ph-cigarette text-xs -ml-1"></i> 廢+菸</button>
+            <div class="segmented-control mb-3" id="category-selector">
+                <button class="segmented-btn active" onclick="setCategoryFilter('全部')"><i class="ph-fill ph-globe"></i> 全部</button>
+                <button class="segmented-btn" onclick="setCategoryFilter('一般廢棄物')"><i class="ph-fill ph-trash"></i> 廢棄物</button>
+                <button class="segmented-btn" onclick="setCategoryFilter('菸蒂')"><i class="ph-fill ph-cigarette"></i> 菸蒂</button>
+                <button class="segmented-btn" onclick="setCategoryFilter('雜草')"><i class="ph-fill ph-leaf"></i> 雜草</button>
+                <button class="segmented-btn" onclick="setCategoryFilter('一般廢棄物+菸蒂')"><i class="ph-fill ph-list-checks"></i> 待巡檢</button>
             </div>
             <div id="period-toggle-container" class="flex justify-center mb-3 transition-opacity duration-300">
-                <div class="period-toggle-bg p-1 rounded-full flex w-64 shadow-lg">
-                    <button id="btn-period-h1" onclick="setPeriod('H1')" class="period-btn active flex-1 py-1.5 rounded-full text-sm flex justify-center items-center gap-1"><i class="ph-fill ph-sun text-lg"></i> 上半年 (6月)</button>
-                    <button id="btn-period-h2" onclick="setPeriod('H2')" class="period-btn inactive flex-1 py-1.5 rounded-full text-sm flex justify-center items-center gap-1"><i class="ph-fill ph-moon-stars text-lg"></i> 下半年 (11月)</button>
+                <div class="period-toggle-bg p-1 rounded-full flex items-center shadow-lg">
+                    <button id="btn-period-h1" onclick="setPeriod('H1')" class="period-btn active flex-1 py-2 rounded-full text-sm flex justify-center items-center gap-1"><i class="ph-fill ph-sun text-lg"></i> 上半年</button>
+                    <div class="period-arrow"><i class="ph-bold ph-arrow-right"></i></div>
+                    <button id="btn-period-h2" onclick="setPeriod('H2')" class="period-btn inactive flex-1 py-2 rounded-full text-sm flex justify-center items-center gap-1"><i class="ph-fill ph-moon-stars text-lg"></i> 下半年</button>
                 </div>
             </div>
             <div class="flex items-center justify-between mb-3">
@@ -224,26 +171,21 @@
     </div>
 
     <script>
-        // ================= 輔助函數 =================
+        // ===== 輔助函數 =====
         function normalizeString(str) {
             if (!str) return "";
-            return str.toString()
-                      .replace(/\uFEFF/g, '')
-                      .replace(/\s+/g, '')
-                      .replace(/[-_－—\/\\#+]/g, '')
-                      .toLowerCase();
+            return str.toString().replace(/\uFEFF/g, '').replace(/\s+/g, '').replace(/[-_－—\/\\#+]/g, '').toLowerCase();
         }
 
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            let bgClass = 'bg-slate-900/95 text-white border-slate-700';
-            let iconClass = 'ph-fill ph-info text-sky-400';
-            if (type === 'success') { bgClass = 'bg-emerald-950/95 text-emerald-100 border-emerald-500/30'; iconClass = 'ph-fill ph-check-circle text-emerald-400'; }
-            else if (type === 'error') { bgClass = 'bg-rose-950/95 text-rose-100 border-rose-500/30'; iconClass = 'ph-fill ph-x-circle text-rose-400'; }
-            else if (type === 'warning') { bgClass = 'bg-amber-950/95 text-amber-100 border-amber-500/30'; iconClass = 'ph-fill ph-warning text-amber-400'; }
-            toast.className = `flex items-start gap-3 p-4 rounded-2xl border backdrop-blur-xl shadow-2xl transition-all duration-300 translate-y-4 opacity-0 pointer-events-auto ${bgClass}`;
-            toast.innerHTML = `<i class="${iconClass} text-xl shrink-0 mt-0.5"></i><div class="text-sm font-medium leading-relaxed flex-1">${message.replace(/\n/g, '<br>')}</div>`;
+            let bg = 'bg-slate-900/95 text-white border-slate-700', ic = 'ph-fill ph-info text-sky-400';
+            if (type === 'success') { bg = 'bg-emerald-950/95 text-emerald-100 border-emerald-500/30'; ic = 'ph-fill ph-check-circle text-emerald-400'; }
+            else if (type === 'error') { bg = 'bg-rose-950/95 text-rose-100 border-rose-500/30'; ic = 'ph-fill ph-x-circle text-rose-400'; }
+            else if (type === 'warning') { bg = 'bg-amber-950/95 text-amber-100 border-amber-500/30'; ic = 'ph-fill ph-warning text-amber-400'; }
+            toast.className = `flex items-start gap-3 p-4 rounded-2xl border backdrop-blur-xl shadow-2xl transition-all duration-300 translate-y-4 opacity-0 pointer-events-auto ${bg}`;
+            toast.innerHTML = `<i class="${ic} text-xl shrink-0 mt-0.5"></i><div class="text-sm font-medium leading-relaxed flex-1">${message.replace(/\n/g, '<br>')}</div>`;
             container.appendChild(toast);
             setTimeout(() => { toast.classList.remove('translate-y-4', 'opacity-0'); }, 50);
             setTimeout(() => { toast.classList.add('translate-y-[-10px]', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 4000);
@@ -253,27 +195,25 @@
             const modal = document.getElementById('confirm-modal');
             document.getElementById('confirm-title').innerText = title;
             document.getElementById('confirm-message').innerText = message;
-            modal.classList.remove('hidden');
-            setTimeout(() => { modal.classList.remove('opacity-0'); }, 10);
-            const closeFn = () => { modal.classList.add('opacity-0'); setTimeout(() => { modal.classList.add('hidden'); }, 300); };
-            document.getElementById('confirm-cancel-btn').onclick = closeFn;
-            document.getElementById('confirm-ok-btn').onclick = () => { closeFn(); onConfirm(); };
+            modal.classList.remove('hidden'); setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            const close = () => { modal.classList.add('opacity-0'); setTimeout(() => modal.classList.add('hidden'), 300); };
+            document.getElementById('confirm-cancel-btn').onclick = close;
+            document.getElementById('confirm-ok-btn').onclick = () => { close(); onConfirm(); };
         }
 
-        // ================= PWA =================
+        // PWA
         const manifestData = { "name": "南投縣髒亂點巡查系統", "short_name": "髒亂點巡檢", "start_url": ".", "display": "standalone", "background_color": "#020617", "theme_color": "#020617", "icons": [{ "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 256 256'><rect width='256' height='256' fill='%23020617'/><circle cx='128' cy='128' r='96' fill='none' stroke='%2338bdf8' stroke-width='16'/><path d='M128,64 L160,160 L96,160 Z' fill='%2338bdf8'/></svg>", "sizes": "192x192 512x512", "type": "image/svg+xml" }] };
         document.getElementById('dynamic-manifest').href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifestData));
-        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').then(reg => reg.update()).catch(err => console.log('SW optional')); }
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').then(r => r.update()).catch(() => {}); }
         let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; showPwaPrompt("點擊此處將系統安裝至手機桌面", () => { deferredPrompt.prompt(); deferredPrompt.userChoice.then(() => { deferredPrompt = null; hidePwaPrompt(); }); }); });
-        const isIos = () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
-        const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
-        if (isIos() && !isInStandaloneMode()) { setTimeout(() => { showPwaPrompt("點選下方「分享」按鈕，選擇「加入主畫面」", null); }, 3000); }
-        function showPwaPrompt(msg, onClickFn) { const p = document.getElementById('pwa-prompt'); p.querySelector('p').innerText = msg; p.classList.remove('hidden'); setTimeout(() => p.classList.remove('translate-y-[-150%]'), 100); if (onClickFn) p.onclick = onClickFn; }
+        window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; showPwaPrompt("點擊此處將系統安裝至手機桌面", () => { deferredPrompt.prompt(); deferredPrompt.userChoice.then(() => { deferredPrompt = null; hidePwaPrompt(); }); }); });
+        const isIos = () => /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+        if (isIos() && !(navigator.standalone)) { setTimeout(() => { showPwaPrompt("點選下方「分享」按鈕，選擇「加入主畫面」", null); }, 3000); }
+        function showPwaPrompt(msg, fn) { const p = document.getElementById('pwa-prompt'); p.querySelector('p').innerText = msg; p.classList.remove('hidden'); setTimeout(() => p.classList.remove('translate-y-[-150%]'), 100); if (fn) p.onclick = fn; }
         function hidePwaPrompt() { const p = document.getElementById('pwa-prompt'); p.classList.add('translate-y-[-150%]'); setTimeout(() => p.classList.add('hidden'), 300); }
 
-        // ================= 全域狀態 =================
-        const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMwTbzT29t_oBvnSmoHENNG5piiWbQHeE7BBU5gjPr9aitoeiTNKpZH9jyyjL7j6mE/exec"; // ← 請換成您的部署網址
+        // ===== 全域狀態 =====
+        const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMwTbzT29t_oBvnSmoHENNG5piiWbQHeE7BBU5gjPr9aitoeiTNKpZH9jyyjL7j6mE/exec";
         const SYSTEM_PASSWORD = "54004658";
         let mapData = {};
         let inspectionState = JSON.parse(localStorage.getItem('nantou_messy_inspection_v2')) || {};
@@ -282,16 +222,15 @@
 
         function setCategoryFilter(cat) {
             currentCategoryFilter = cat;
-            document.querySelectorAll('#category-selector button').forEach(btn => {
+            document.querySelectorAll('#category-selector .segmented-btn').forEach(btn => {
                 const txt = btn.innerText.replace(/\s+/g, '');
-                if (txt.includes(cat.replace(/\s+/g, '')) || (cat === '全部' && txt.includes('全部')) || (cat === '一般廢棄物+菸蒂' && txt.includes('廢+菸'))) {
-                    btn.className = btn.className.replace('inactive', 'active');
+                if (txt.includes(cat.replace(/\s+/g, '')) || (cat === '全部' && txt.includes('全部')) || (cat === '一般廢棄物+菸蒂' && txt.includes('待巡檢'))) {
+                    btn.classList.add('active');
                 } else {
-                    btn.className = btn.className.replace('active', 'inactive');
+                    btn.classList.remove('active');
                 }
             });
-            const pc = document.getElementById('period-toggle-container');
-            const badge = document.getElementById('list-period-badge');
+            const pc = document.getElementById('period-toggle-container'), badge = document.getElementById('list-period-badge');
             if (cat === '雜草') {
                 pc.style.display = 'none';
                 document.getElementById('progress-period-label').innerText = '總體';
@@ -309,8 +248,8 @@
 
         function setPeriod(period) {
             currentPeriod = period;
-            document.getElementById('btn-period-h1').className = period==='H1' ? 'period-btn active flex-1 py-1.5 rounded-full text-sm flex justify-center items-center gap-1' : 'period-btn inactive flex-1 py-1.5 rounded-full text-sm flex justify-center items-center gap-1';
-            document.getElementById('btn-period-h2').className = period==='H2' ? 'period-btn active flex-1 py-1.5 rounded-full text-sm flex justify-center items-center gap-1' : 'period-btn inactive flex-1 py-1.5 rounded-full text-sm flex justify-center items-center gap-1';
+            document.getElementById('btn-period-h1').className = period === 'H1' ? 'period-btn active flex-1 py-2 rounded-full text-sm flex justify-center items-center gap-1' : 'period-btn inactive flex-1 py-2 rounded-full text-sm flex justify-center items-center gap-1';
+            document.getElementById('btn-period-h2').className = period === 'H2' ? 'period-btn active flex-1 py-2 rounded-full text-sm flex justify-center items-center gap-1' : 'period-btn inactive flex-1 py-2 rounded-full text-sm flex justify-center items-center gap-1';
             if (currentTownshipId) loadTownship(currentTownshipId, true);
             if (currentItemId && !document.getElementById('bottom-sheet').classList.contains('hidden-sheet')) updateBottomSheetStatus();
             if (isListView) renderListView();
@@ -332,22 +271,17 @@
         }
         function getStorageKey(poiId, category) { return category === '雜草' ? `${poiId}_weed` : `${poiId}_${currentPeriod}`; }
 
-        // ================= KML 載入與解析 =================
+        // ===== KML =====
         async function loadKMLData() {
             try {
-                const timestamp = new Date().getTime();
-                const safeUrl = encodeURI('115年南投縣髒亂點.kml') + `?t=${timestamp}`;
-                const response = await fetch(safeUrl, { cache: 'no-store' });
-                if (!response.ok) throw new Error("找不到 KML 檔案");
-                const kmlText = await response.text();
-                try {
-                    parseKMLString(kmlText);
-                } catch (parseError) {
-                    console.error("KML 解析失敗：", parseError);
-                    throw new Error("KML 內容格式異常");
-                }
-            } catch (error) {
-                console.warn("自動讀取 KML 失敗", error);
+                const ts = new Date().getTime();
+                const url = encodeURI('115年南投縣髒亂點.kml') + `?t=${ts}`;
+                const res = await fetch(url, { cache: 'no-store' });
+                if (!res.ok) throw new Error("找不到 KML 檔案");
+                const text = await res.text();
+                try { parseKMLString(text); } catch (e) { console.error(e); throw new Error("KML 內容格式異常"); }
+            } catch (err) {
+                console.warn(err);
                 document.getElementById('loading-status').classList.add('hidden');
                 document.getElementById('kml-upload-fallback').classList.remove('hidden');
             }
@@ -368,61 +302,56 @@
 
         function parseKMLString(kmlString) {
             const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(kmlString, "text/xml");
-            const folders = xmlDoc.getElementsByTagName("Folder");
+            const xml = parser.parseFromString(kmlString, "text/xml");
+            const folders = xml.getElementsByTagName("Folder");
             mapData = {};
-            let globalPointIndex = 0;
-
+            let idx = 0;
             Array.from(folders).forEach(folder => {
-                const folderNameNode = folder.getElementsByTagName("name")[0];
-                if (!folderNameNode) return;
-                const folderName = folderNameNode.textContent;
-                let category = "";
-                if (folderName.includes("廢棄物")) category = "一般廢棄物";
-                else if (folderName.includes("菸蒂")) category = "菸蒂";
-                else if (folderName.includes("雜草")) category = "雜草";
+                const fname = folder.getElementsByTagName("name")[0];
+                if (!fname) return;
+                const fn = fname.textContent;
+                let cat = "";
+                if (fn.includes("廢棄物")) cat = "一般廢棄物";
+                else if (fn.includes("菸蒂")) cat = "菸蒂";
+                else if (fn.includes("雜草")) cat = "雜草";
                 else return;
-
-                const placemarks = folder.getElementsByTagName("Placemark");
-                Array.from(placemarks).forEach(pm => {
+                Array.from(folder.getElementsByTagName("Placemark")).forEach(pm => {
                     let rawName = "";
-                    const nameNode = pm.getElementsByTagName("name")[0];
-                    if (nameNode) rawName = nameNode.textContent.trim();
-                    const coordNode = pm.getElementsByTagName("coordinates")[0];
-                    if (!coordNode) return;
-                    const coords = coordNode.textContent.trim().split(',');
-                    const lng = parseFloat(coords[0]), lat = parseFloat(coords[1]);
-
-                    let township = "", location = "", agency = "", landZoning = "", images = [];
+                    const nm = pm.getElementsByTagName("name")[0];
+                    if (nm) rawName = nm.textContent.trim();
+                    const coord = pm.getElementsByTagName("coordinates")[0];
+                    if (!coord) return;
+                    const parts = coord.textContent.trim().split(',');
+                    const lng = parseFloat(parts[0]), lat = parseFloat(parts[1]);
+                    let township = "", location = "", agency = "", landZoning = "", images = "";
                     let landSec = "", landNum = "";
-                    const dataNodes = pm.querySelectorAll("Data, SimpleData");
-                    Array.from(dataNodes).forEach(data => {
-                        const nameAttr = data.getAttribute("name");
-                        if(!nameAttr) return;
-                        const val = data.textContent.trim();
-                        const cleanName = normalizeString(nameAttr);
-                        if (cleanName === "鄉鎮市" || cleanName === "鄉鎮" || cleanName.includes("鄉鎮市村里") || (cleanName.includes("鄉鎮") && !cleanName.includes("行政"))) township = val;
-                        else if (cleanName.includes("地點") || cleanName.includes("位置") || cleanName.includes("地址") || cleanName.includes("場址") || cleanName === "loc") location = val;
-                        else if (cleanName.includes("地段") || cleanName.includes("段別") || cleanName.includes("段名")) landSec = val;
-                        else if (cleanName.includes("地號") || cleanName.includes("號碼") || cleanName.includes("地號碼")) landNum = val;
-                        else if (cleanName.includes("權責") || cleanName.includes("主管")) agency = val;
-                        else if (cleanName.includes("分區") || cleanName.includes("土地")) landZoning = val;
-                        else if (cleanName.includes("gxmedialinks") || cleanName.includes("media") || cleanName.includes("links")) images = val ? val.split(' ').filter(u => u.trim() !== '') : [];
+                    Array.from(pm.querySelectorAll("Data, SimpleData")).forEach(d => {
+                        const attr = d.getAttribute("name");
+                        if (!attr) return;
+                        const val = d.textContent.trim();
+                        const cname = normalizeString(attr);
+                        if (cname === "鄉鎮市" || cname === "鄉鎮" || cname.includes("鄉鎮市村里") || (cname.includes("鄉鎮") && !cname.includes("行政"))) township = val;
+                        else if (cname.includes("地點") || cname.includes("位置") || cname.includes("地址") || cname.includes("場址") || cname === "loc") location = val;
+                        else if (cname.includes("地段") || cname.includes("段別") || cname.includes("段名")) landSec = val;
+                        else if (cname.includes("地號") || cname.includes("號碼") || cname.includes("地號碼")) landNum = val;
+                        else if (cname.includes("權責") || cname.includes("主管")) agency = val;
+                        else if (cname.includes("分區") || cname.includes("土地")) landZoning = val;
+                        else if (cname.includes("gxmedialinks") || cname.includes("media") || cname.includes("links")) images = val ? val.split(' ').filter(u => u.trim() !== '') : [];
                     });
-                    if (!township) { for (let d of dataNodes) { if (d.getAttribute("name") === "鄉鎮市" || d.getAttribute("name").includes("鄉鎮市村里")) { township = d.textContent.trim(); break; } } }
+                    if (!township) { for (let d of pm.querySelectorAll("Data, SimpleData")) { if (d.getAttribute("name") === "鄉鎮市" || d.getAttribute("name").includes("鄉鎮市村里")) { township = d.textContent.trim(); break; } } }
                     if (!township) township = "未知鄉鎮";
                     if (!location && rawName) location = rawName;
-                    let idRaw = rawName || (globalPointIndex + 1).toString();
-                    if (category === '雜草') idRaw = `Weed_${globalPointIndex}`;
-                    const uniqueId = `${category}_${idRaw}_${globalPointIndex++}`;
-                    let landStr = [landSec, landNum].filter(Boolean).join(' ');
-                    let finalName = (category === '雜草') ? (landStr || location || "未提供地段地號") : (location || landStr || rawName || "未提供地點");
-                    const townshipKey = township.substring(0,3);
-                    if (!mapData[townshipKey]) mapData[townshipKey] = { name: townshipKey, points: [] };
-                    mapData[townshipKey].points.push({ id: uniqueId, rawId: idRaw, category, name: finalName, lat, lng, agency: agency || "未提供", landZoning: landZoning || "未提供", images });
+                    let idRaw = rawName || (idx + 1).toString();
+                    if (cat === '雜草') idRaw = `Weed_${idx}`;
+                    const uid = `${cat}_${idRaw}_${idx++}`;
+                    let land = [landSec, landNum].filter(Boolean).join(' ');
+                    let finalName = cat === '雜草' ? (land || location || "未提供地段地號") : (location || land || rawName || "未提供地點");
+                    const tkey = township.substring(0, 3);
+                    if (!mapData[tkey]) mapData[tkey] = { name: tkey, points: [] };
+                    mapData[tkey].points.push({ id: uid, rawId: idRaw, category: cat, name: finalName, lat, lng, agency: agency || "未提供", landZoning: landZoning || "未提供", images });
                 });
             });
-            if (Object.keys(mapData).length === 0) showToast("⚠️ 系統未能解析到點位資料！", "warning");
+            if (Object.keys(mapData).length === 0) showToast("⚠️ 無法解析點位", "warning");
             if (localStorage.getItem('nantou_messy_system_auth') === 'true') performSyncAndEnter();
             else {
                 document.getElementById('splash-screen').style.opacity = '0';
@@ -434,17 +363,17 @@
             }
         }
 
-        // ================= 地圖 =================
+        // ===== 地圖 =====
         let map, activeLayers = [], currentBounds = null, userMarker = null, isListView = false;
 
-        function createCategoryIcon(category, isDone) {
-            let iconClass, mainColor;
-            if (category === '一般廢棄物') { iconClass = 'ph-trash'; mainColor = '#94a3b8'; }
-            else if (category === '菸蒂') { iconClass = 'ph-cigarette'; mainColor = '#f97316'; }
-            else { iconClass = 'ph-leaf'; mainColor = '#10b981'; }
-            if (isDone) mainColor = '#475569';
-            const opacity = isDone ? 0.75 : 1;
-            return L.divIcon({ className: 'custom-leaflet-icon', html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 50" width="40" height="50" style="opacity:${opacity}; filter: drop-shadow(0px 5px 4px rgba(0,0,0,0.5)); overflow:visible;">${!isDone ? `<circle cx="20" cy="20" r="18" fill="none" stroke="${mainColor}" stroke-width="2" opacity="0"><animate attributeName="r" values="18; 28" dur="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.8; 0" dur="1.5s" repeatCount="indefinite"/></circle>` : ''}<path d="M20 2C10.059 2 2 10.059 2 20c0 13.5 18 28 18 28s18-14.5 18-28c0-9.941-8.059-18-18-18z" fill="rgba(15, 23, 42, 0.95)" stroke="${mainColor}" stroke-width="2.5"/><foreignObject x="8" y="8" width="24" height="24"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex; justify-content:center; align-items:center; height:100%; color:${mainColor}; font-size:16px;"><i class="ph-fill ${iconClass}"></i></div></foreignObject></svg>`, iconSize: [40, 50], iconAnchor: [20, 50] });
+        function createCategoryIcon(cat, isDone) {
+            let ic, mc;
+            if (cat === '一般廢棄物') { ic = 'ph-trash'; mc = '#94a3b8'; }
+            else if (cat === '菸蒂') { ic = 'ph-cigarette'; mc = '#f97316'; }
+            else { ic = 'ph-leaf'; mc = '#10b981'; }
+            if (isDone) mc = '#475569';
+            const op = isDone ? 0.75 : 1;
+            return L.divIcon({ className: 'custom-icon', html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 50" width="40" height="50" style="opacity:${op}; filter: drop-shadow(0px 5px 4px rgba(0,0,0,0.5));">${!isDone?`<circle cx="20" cy="20" r="18" fill="none" stroke="${mc}" stroke-width="2" opacity="0"><animate attributeName="r" values="18;28" dur="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.8;0" dur="1.5s" repeatCount="indefinite"/></circle>`:''}<path d="M20 2C10.059 2 2 10.059 2 20c0 13.5 18 28 18 28s18-14.5 18-28c0-9.941-8.059-18-18-18z" fill="rgba(15,23,42,0.95)" stroke="${mc}" stroke-width="2.5"/><foreignObject x="8" y="8" width="24" height="24"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;justify-content:center;align-items:center;height:100%;color:${mc};font-size:16px;"><i class="ph-fill ${ic}"></i></div></foreignObject></svg>`, iconSize: [40,50], iconAnchor: [20,50] });
         }
 
         function initMap() {
@@ -455,21 +384,19 @@
         }
 
         function drawMapForTownship(tId) {
-            const bounds = [];
-            const data = mapData[tId];
+            const bounds = [], data = mapData[tId];
             if(!data || !data.points) return bounds;
             data.points.forEach(poi => {
                 if (!isCategoryVisible(poi.category)) return;
-                const stateObj = inspectionState[poi.id] || { H1: false, H2: false, done: false };
-                const isDone = (poi.category === '雜草') ? stateObj.done : stateObj[currentPeriod];
-                const marker = L.marker([poi.lat, poi.lng], { icon: createCategoryIcon(poi.category, isDone) }).addTo(map);
-                marker.on('click', (e) => { L.DomEvent.stopPropagation(e); map.flyTo([poi.lat, poi.lng], 16, { animate: true, duration: 1.2 }); showBottomSheet(poi, tId); });
-                let colorClass = 'text-sky-400';
-                if (isDone) colorClass = 'text-slate-400';
-                else if (poi.category === '菸蒂') colorClass = 'text-orange-400';
-                else if (poi.category === '雜草') colorClass = 'text-emerald-400';
-                marker.bindTooltip(`<span class="${colorClass} font-bold">${poi.name}${isDone ? ' (已巡檢)' : ''}</span>`, { permanent: true, direction: 'top', className: 'glass-tooltip', offset: [0, -35] });
-                activeLayers.push(marker); bounds.push([poi.lat, poi.lng]);
+                const st = inspectionState[poi.id] || {}, isDone = poi.category === '雜草' ? st.done : st[currentPeriod];
+                const mk = L.marker([poi.lat, poi.lng], { icon: createCategoryIcon(poi.category, isDone) }).addTo(map);
+                mk.on('click', (e) => { L.DomEvent.stopPropagation(e); map.flyTo([poi.lat, poi.lng], 16, { animate: true, duration: 1.2 }); showBottomSheet(poi, tId); });
+                let cc = 'text-sky-400';
+                if (isDone) cc = 'text-slate-400';
+                else if (poi.category === '菸蒂') cc = 'text-orange-400';
+                else if (poi.category === '雜草') cc = 'text-emerald-400';
+                mk.bindTooltip(`<span class="${cc} font-bold">${poi.name}${isDone?' (已巡檢)':''}</span>`, { permanent: true, direction: 'top', className: 'glass-tooltip', offset: [0, -35] });
+                activeLayers.push(mk); bounds.push([poi.lat, poi.lng]);
             });
             return bounds;
         }
@@ -479,14 +406,12 @@
             const data = mapData[tId];
             if (!data) return;
             document.getElementById('header-title').innerText = `${data.name} 查報視角`;
-            document.querySelectorAll('.township-pill').forEach(btn => {
-                btn.className = (btn.dataset.id === tId) ? 'township-pill shrink-0 ... bg-sky-600/90 border-sky-400 text-white' : 'township-pill shrink-0 ... bg-slate-800/60 border-slate-700 text-slate-400';
-            });
-            activeLayers.forEach(layer => map.removeLayer(layer)); activeLayers = [];
+            document.querySelectorAll('.township-pill').forEach(b => { b.className = b.dataset.id === tId ? 'township-pill shrink-0 ... bg-sky-600/90 border-sky-400 text-white' : 'township-pill shrink-0 ... bg-slate-800/60 border-slate-700 text-slate-400'; });
+            activeLayers.forEach(l => map.removeLayer(l)); activeLayers = [];
             if (!keepHighlight) hideBottomSheet();
             const bounds = drawMapForTownship(tId);
             updateProgressBar();
-            if (!keepHighlight && bounds.length > 0) { currentBounds = L.latLngBounds(bounds); map.fitBounds(currentBounds, { padding: [50,50], animate: true, duration: 1.5 }); }
+            if (!keepHighlight && bounds.length) { currentBounds = L.latLngBounds(bounds); map.fitBounds(currentBounds, { padding: [50,50], animate: true, duration: 1.5 }); }
         }
 
         function updateProgressBar() {
@@ -494,14 +419,10 @@
             const data = mapData[currentTownshipId];
             if(!data || !data.points) return;
             let total = 0, comp = 0;
-            data.points.forEach(poi => {
-                if (!isCategoryVisible(poi.category)) return;
-                total++;
-                if((poi.category === '雜草' ? inspectionState[poi.id]?.done : inspectionState[poi.id]?.[currentPeriod])) comp++;
-            });
-            const pct = total === 0 ? 0 : Math.round((comp / total) * 100);
-            let periodText = currentCategoryFilter === '雜草' ? '總體' : (currentCategoryFilter === '一般廢棄物+菸蒂' ? '巡檢類別' : (currentPeriod==='H1'?'上半年':'下半年'));
-            document.getElementById('progress-text').innerHTML = `🏆 <span id="progress-period-label">${periodText}</span>達成率：${comp}/${total} 點位`;
+            data.points.forEach(poi => { if(isCategoryVisible(poi.category)) { total++; if((poi.category==='雜草'?inspectionState[poi.id]?.done:inspectionState[poi.id]?.[currentPeriod])) comp++; } });
+            const pct = total? Math.round(comp/total*100) : 0;
+            let ptxt = currentCategoryFilter==='雜草'?'總體':(currentCategoryFilter==='一般廢棄物+菸蒂'?'巡檢類別':(currentPeriod==='H1'?'上半年':'下半年'));
+            document.getElementById('progress-text').innerHTML = `🏆 <span id="progress-period-label">${ptxt}</span>達成率：${comp}/${total} 點位`;
             document.getElementById('progress-percent').innerText = `${pct}%`;
             document.getElementById('progress-bar').style.width = `${pct}%`;
         }
@@ -510,88 +431,67 @@
             if(!currentItemId || !currentTownshipId) return;
             const poi = mapData[currentTownshipId].points.find(p => p.id === currentItemId);
             if(!poi) return;
-            const stateObj = inspectionState[currentItemId] || {};
-            const btn = document.getElementById('mark-btn'), markText = document.getElementById('mark-text'), markIcon = document.getElementById('mark-icon');
-            const periodText = document.getElementById('mark-period-text'), uploadSection = document.getElementById('photo-upload-container'), readonlyNotice = document.getElementById('weed-readonly-notice');
+            const state = inspectionState[currentItemId] || {}, btn = document.getElementById('mark-btn'), mt = document.getElementById('mark-text'), mi = document.getElementById('mark-icon');
+            const pt = document.getElementById('mark-period-text'), up = document.getElementById('photo-upload-container'), rn = document.getElementById('weed-readonly-notice');
             if (poi.category === '雜草') {
-                if(btn) btn.style.display = 'none';
-                if(uploadSection) uploadSection.style.display = 'none';
-                if(readonlyNotice) readonlyNotice.classList.remove('hidden');
+                if(btn) btn.style.display = 'none'; if(up) up.style.display = 'none'; if(rn) rn.classList.remove('hidden');
             } else {
-                if(btn) btn.style.display = 'flex';
-                if(uploadSection) uploadSection.style.display = 'block';
-                if(readonlyNotice) readonlyNotice.classList.add('hidden');
-                const isDone = stateObj[currentPeriod] || false;
-                if(periodText) periodText.innerText = currentPeriod === 'H1' ? '上半年巡檢日期' : '下半年巡檢日期';
-                if (isDone) {
-                    btn.className = "shrink-0 flex flex-col ... bg-emerald-600 border-emerald-400 text-white cursor-pointer h-[55px] min-w-[110px]";
-                    markIcon.className = "ph-fill ph-check-circle text-lg text-white"; markText.innerText = "取消";
-                } else {
-                    btn.className = "shrink-0 flex flex-col ... bg-slate-800 border-slate-600 text-slate-400 cursor-pointer h-[55px] min-w-[110px]";
-                    markIcon.className = "ph-fill ph-warning-circle text-lg text-slate-500"; markText.innerText = "填入";
-                }
+                if(btn) btn.style.display = 'flex'; if(up) up.style.display = 'block'; if(rn) rn.classList.add('hidden');
+                const isDone = state[currentPeriod] || false;
+                if(pt) pt.innerText = currentPeriod==='H1'?'上半年巡檢日期':'下半年巡檢日期';
+                btn.className = isDone ? "shrink-0 flex flex-col ... bg-emerald-600 border-emerald-400 text-white cursor-pointer h-[55px]" : "shrink-0 flex flex-col ... bg-slate-800 border-slate-600 text-slate-400 cursor-pointer h-[55px]";
+                mi.className = isDone ? "ph-fill ph-check-circle text-lg text-white" : "ph-fill ph-warning-circle text-lg text-slate-500";
+                mt.innerText = isDone ? "取消" : "填入";
             }
         }
 
-        // ================= 同步 =================
+        // ===== 同步 =====
         async function toggleItemStatus() {
             if(!currentItemId || !currentTownshipId) return;
             const poi = mapData[currentTownshipId].points.find(p => p.id === currentItemId);
             if (poi.category === '雜草') return;
             if (!inspectionState[currentItemId]) inspectionState[currentItemId] = { H1: false, H2: false, done: false };
             let newState = !inspectionState[currentItemId][currentPeriod];
-            const btn = document.getElementById('mark-btn'), markText = document.getElementById('mark-text'), markIcon = document.getElementById('mark-icon');
-            const origClass = btn.className, origIcon = markIcon.className, origText = markText.innerText;
-            btn.className = "shrink-0 flex flex-col ... bg-slate-800 border-slate-700 text-sky-400 cursor-wait h-[55px] min-w-[110px]";
-            markIcon.className = "ph ph-spinner animate-spin text-lg"; markText.innerText = '同步中...';
+            const btn = document.getElementById('mark-btn'), mt = document.getElementById('mark-text'), mi = document.getElementById('mark-icon');
+            const origClass = btn.className, origIcon = mi.className, origText = mt.innerText;
+            btn.className = "shrink-0 ... bg-slate-800 border-slate-700 text-sky-400 cursor-wait h-[55px]";
+            mi.className = "ph ph-spinner animate-spin text-lg"; mt.innerText = '同步中...';
             try {
-                const res = await fetch(GOOGLE_APP_SCRIPT_URL, {
-                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'update_status', category: poi.category, period: currentPeriod, lat: poi.lat, lng: poi.lng, status: newState ? "填入" : "取消" })
-                });
+                const res = await fetch(GOOGLE_APP_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'update_status', category: poi.category, period: currentPeriod, lat: poi.lat, lng: poi.lng, status: newState ? "填入" : "取消" }) });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const result = await res.json();
                 if (result.status === "success" || result.status === "warning") {
                     inspectionState[currentItemId][currentPeriod] = newState;
                     saveState(); updateBottomSheetStatus();
-                    showToast(result.status === "warning" ? `⚠️ ${result.message}` : `✅ 已成功【${newState?'填入':'取消'}】巡檢日期！`, result.status==="warning"?"warning":"success");
+                    showToast(result.status==="warning"?`⚠️ ${result.message}`:`✅ 已成功【${newState?'填入':'取消'}】巡檢日期！`, result.status==="warning"?"warning":"success");
                 } else {
                     showToast(`⚠️ 同步被拒絕：${result.message}`, "error");
-                    btn.className = origClass; markIcon.className = origIcon; markText.innerText = origText;
+                    btn.className = origClass; mi.className = origIcon; mt.innerText = origText;
                 }
-            } catch(e) {
-                showToast(`❌ 同步連線失敗：${e.message}`, "error");
-                btn.className = origClass; markIcon.className = origIcon; markText.innerText = origText;
-            }
+            } catch(e) { showToast(`❌ 同步連線失敗：${e.message}`, "error"); btn.className = origClass; mi.className = origIcon; mt.innerText = origText; }
         }
 
         function showBottomSheet(poi, tId) {
             currentItemId = poi.id;
             document.getElementById('sheet-title').innerText = poi.name;
             document.getElementById('sheet-id-badge').innerText = `案件數: ${poi.rawId}`;
-            const catBadge = document.getElementById('sheet-category-badge');
-            catBadge.innerText = poi.category;
-            let badgeClass = 'badge-waste';
-            if (poi.category === '菸蒂') badgeClass = 'badge-cigarette';
-            else if (poi.category === '雜草') badgeClass = 'badge-weed';
-            catBadge.className = `text-[10px] font-bold px-2 py-0.5 rounded ${badgeClass}`;
+            const cb = document.getElementById('sheet-category-badge'); cb.innerText = poi.category;
+            let bc = 'badge-waste'; if (poi.category==='菸蒂') bc='badge-cigarette'; else if (poi.category==='雜草') bc='badge-weed';
+            cb.className = `text-[10px] font-bold px-2 py-0.5 rounded ${bc}`;
             document.getElementById('sheet-desc').innerHTML = `<div class="flex items-center justify-between border-b border-slate-700/50 pb-2"><span class="text-slate-400 text-xs font-bold">主管機關</span><span class="text-white text-sm">${poi.agency}</span></div><div class="flex items-center justify-between pt-1"><span class="text-slate-400 text-xs font-bold">使用分區</span><span class="text-slate-200 text-sm">${poi.landZoning}</span></div>`;
             updateBottomSheetStatus(); renderPhotos();
-            const refSec = document.getElementById('ref-photos-section'), refGrid = document.getElementById('ref-photo-grid');
+            const refS = document.getElementById('ref-photos-section'), refG = document.getElementById('ref-photo-grid');
             if (poi.images && poi.images.length) {
-                refSec.classList.remove('hidden');
-                refGrid.innerHTML = poi.images.map((url, idx) => `<div onclick="openLightbox('${url}')" class="w-full bg-slate-900 border border-slate-700 hover:border-sky-500 rounded-xl p-3 flex items-center justify-between cursor-pointer active:scale-95 group shadow-lg"><div class="flex items-center gap-3 overflow-hidden"><div class="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-sky-500/20 shrink-0"><i class="ph-fill ph-image text-2xl text-slate-400 group-hover:text-sky-400"></i></div><div class="flex flex-col overflow-hidden"><span class="text-white font-bold text-sm truncate">原地圖參考照片 ${idx+1}</span><span class="text-xs text-slate-500 mt-0.5 truncate">點擊開啟高畫質預覽</span></div></div></div>`).join('');
-            } else { refSec.classList.add('hidden'); refGrid.innerHTML = ''; }
+                refS.classList.remove('hidden');
+                refG.innerHTML = poi.images.map((u,i) => `<div onclick="openLightbox('${u}')" class="w-full bg-slate-900 border border-slate-700 hover:border-sky-500 rounded-xl p-3 flex items-center justify-between cursor-pointer active:scale-95 group shadow-lg"><div class="flex items-center gap-3 overflow-hidden"><div class="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center group-hover:bg-sky-500/20 shrink-0"><i class="ph-fill ph-image text-2xl text-slate-400 group-hover:text-sky-400"></i></div><div class="flex flex-col overflow-hidden"><span class="text-white font-bold text-sm truncate">原地圖參考照片 ${i+1}</span><span class="text-xs text-slate-500 mt-0.5 truncate">點擊開啟高畫質預覽</span></div></div></div>`).join('');
+            } else { refS.classList.add('hidden'); refG.innerHTML = ''; }
             document.getElementById('nav-btn').onclick = () => window.open(`https://www.google.com/maps/search/?api=1&query=${poi.lat},${poi.lng}`, '_blank');
             document.getElementById('bottom-sheet').classList.remove('hidden-sheet');
         }
 
-        function hideBottomSheet() {
-            document.getElementById('bottom-sheet').classList.add('hidden-sheet');
-            currentItemId = null;
-        }
+        function hideBottomSheet() { document.getElementById('bottom-sheet').classList.add('hidden-sheet'); currentItemId = null; }
 
-        // ================= 照片功能 =================
+        // ===== 照片 =====
         function handlePhotoUpload(event) {
             const files = event.target.files;
             if(!files.length || !currentItemId || !currentTownshipId) return;
@@ -671,7 +571,7 @@
             }
         }
 
-        // ================= Lightbox =================
+        // ===== Lightbox =====
         function openLightbox(url) {
             const lb = document.getElementById('lightbox'), img = document.getElementById('lightbox-img'), loading = document.getElementById('lightbox-loading');
             lb.classList.remove('hidden'); void lb.offsetWidth; lb.classList.remove('opacity-0');
@@ -683,7 +583,7 @@
         }
         function closeLightbox() { const lb = document.getElementById('lightbox'); lb.classList.add('opacity-0'); setTimeout(() => { lb.classList.add('hidden'); document.getElementById('lightbox-img').src = ''; }, 300); }
 
-        // ================= 視角切換 =================
+        // ===== 視角切換 =====
         function toggleView() {
             isListView = !isListView;
             const listEl = document.getElementById('list-view'), btnIcon = document.querySelector('#btn-toggle-view i');
@@ -692,11 +592,11 @@
             else { listEl.classList.add('hidden'); btnIcon.className = "ph-fill ph-list text-xl"; if(map) map.invalidateSize(); }
         }
 
-        function renderListView(filterText = "") {
+        function renderListView(filter = "") {
             const container = document.getElementById('list-container');
             if(!container) return;
             container.innerHTML = '';
-            let targets = filterText ? Object.keys(mapData) : [currentTownshipId];
+            let targets = filter ? Object.keys(mapData) : [currentTownshipId];
             let any = false;
             targets.forEach(tId => {
                 const d = mapData[tId];
@@ -707,7 +607,7 @@
                     tTotal++;
                     const isDone = (poi.category === '雜草') ? inspectionState[poi.id]?.done : inspectionState[poi.id]?.[currentPeriod];
                     if(isDone) tComp++;
-                    if (filterText && !poi.name.includes(filterText) && !poi.rawId.includes(filterText) && !d.name.includes(filterText)) return;
+                    if (filter && !poi.name.includes(filter) && !poi.rawId.includes(filter) && !d.name.includes(filter)) return;
                     any = true;
                     let badge = 'badge-waste';
                     if (poi.category === '菸蒂') badge = 'badge-cigarette';
