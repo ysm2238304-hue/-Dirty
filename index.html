@@ -111,7 +111,7 @@
         </div>
         <h1 class="text-3xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500 mb-2">髒亂點巡檢</h1>
         <p class="text-slate-400 tracking-widest text-sm uppercase">115年 廢棄物/菸蒂/雜草</p>
-        <p class="text-sm text-sky-400 font-bold mt-2 shadow-black">v5.6 巡檢日期極簡版</p>
+        <p class="text-sm text-sky-400 font-bold mt-2 shadow-black">v5.7 巡檢日期極簡版</p>
         
         <div id="loading-status" class="mt-12 text-sky-400 text-sm animate-pulse flex items-center gap-2">
             <i class="ph ph-spinner animate-spin text-lg"></i> 載入 KML 圖資中...
@@ -135,7 +135,7 @@
             </div>
             <h2 class="text-xl font-bold text-white mb-2 tracking-widest">系統登入</h2>
             <p class="text-slate-400 text-sm mb-2">請輸入授權碼以存取巡檢資料</p>
-            <p class="text-xs text-sky-400 font-bold mb-6">v5.6 巡檢日期極簡版</p>
+            <p class="text-xs text-sky-400 font-bold mb-6">v5.7 巡檢日期極簡版</p>
             <input type="password" id="pwd-input" placeholder="請輸入密碼" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white text-center tracking-widest focus:outline-none focus:border-sky-400 mb-2 transition-colors">
             <p id="pwd-error" class="text-red-400 text-xs mb-4 h-4 opacity-0 transition-opacity">密碼錯誤，請重新輸入</p>
             <button id="btn-login" onclick="checkPassword()" class="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold py-3 px-4 rounded-xl shadow-[0_0_15px_rgba(14,165,233,0.4)] transition-all active:scale-95 tracking-widest cursor-pointer flex justify-center items-center gap-2">
@@ -328,7 +328,7 @@
          JavaScript 核心邏輯 
          ========================================= -->
     <script>
-        // 🛡️ 洗滌字元輔助函數 (前端 KML 智慧模糊定位專用)
+        // 🛡️ 洗滌字元輔助函數 (前端 KML 智慧模糊定位與防呆專用)
         function normalizeString(str) {
             if (!str) return "";
             return str.toString()
@@ -553,8 +553,10 @@
                 parseKMLString(kmlText);
             } catch (error) {
                 console.warn("自動讀取 KML 失敗，顯示手動上傳按鈕", error);
-                document.getElementById('loading-status').classList.add('hidden');
-                document.getElementById('kml-upload-fallback').classList.remove('hidden');
+                const statusEl = document.getElementById('loading-status');
+                if (statusEl) statusEl.classList.add('hidden');
+                const fallbackEl = document.getElementById('kml-upload-fallback');
+                if (fallbackEl) fallbackEl.classList.remove('hidden');
             }
         }
 
@@ -563,16 +565,19 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
-                document.getElementById('kml-upload-fallback').classList.add('hidden');
-                document.getElementById('loading-status').classList.remove('hidden');
-                document.getElementById('loading-status').innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> KML 讀取成功，解析中...';
-                
+                const fallbackEl = document.getElementById('kml-upload-fallback');
+                if (fallbackEl) fallbackEl.classList.add('hidden');
+                const statusEl = document.getElementById('loading-status');
+                if (statusEl) {
+                    statusEl.classList.remove('hidden');
+                    statusEl.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> KML 讀取成功，解析中...';
+                }
                 setTimeout(() => { parseKMLString(e.target.result); }, 500);
             };
             reader.readAsText(file);
         }
 
-        // 🚀 【KML 解析大升級】：同時支援 <Data> 與 <SimpleData> 並智慧模糊匹配欄位
+        // 🚀 【KML 解析大升級】：直取最外層的 <name> 作為 ID，防止 ID 變空白！
         function parseKMLString(kmlString) {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(kmlString, "text/xml");
@@ -594,8 +599,12 @@
 
                 const placemarks = folder.getElementsByTagName("Placemark");
                 Array.from(placemarks).forEach(pm => {
-                    const pmNameNode = pm.getElementsByTagName("name")[0];
-                    const pmName = pmNameNode ? pmNameNode.textContent.trim() : "";
+                    // 🚀【解決空白 ID 的終極秘密】：直接從 Placemark 外層的 <name> 標籤提取案件數 (ID)
+                    let idRaw = "";
+                    const nameNode = pm.getElementsByTagName("name")[0];
+                    if (nameNode) {
+                        idRaw = nameNode.textContent.trim();
+                    }
 
                     const coordNode = pm.getElementsByTagName("coordinates")[0];
                     if (!coordNode) return;
@@ -603,10 +612,10 @@
                     const lng = parseFloat(coords[0]);
                     const lat = parseFloat(coords[1]);
 
-                    let idRaw = "", township = "", location = "", agency = "", landZoning = "", images = [];
+                    let township = "", location = "", agency = "", landZoning = "", images = [];
                     let landSec = "", landNum = ""; 
 
-                    // 智慧抓取 Data 或者是 SimpleData
+                    // 智慧抓取 Data 或是 SimpleData 屬性標籤
                     const dataNodes = pm.querySelectorAll("Data, SimpleData");
                     Array.from(dataNodes).forEach(data => {
                         const nameAttr = data.getAttribute("name");
@@ -615,11 +624,13 @@
                         const val = data.textContent.trim();
                         const cleanName = normalizeString(nameAttr);
 
-                        // 🔍 模糊比對核心主鍵身分證 (解決 115 檔案對不上的問題)
-                        if (cleanName.includes("案件") || cleanName.includes("編號") || cleanName.includes("序") || cleanName.includes("項次") || cleanName === "id") {
-                            idRaw = val;
-                        } else if (cleanName.includes("鄉鎮") || cleanName.includes("行政區") || cleanName.includes("行政")) {
-                            township = val;
+                        if (cleanName.includes("鄉鎮") || cleanName.includes("行政區") || cleanName.includes("行政")) {
+                            // 在此 KML 中，「鄉鎮市」欄位代表 埔里鎮 等行政區
+                            if (cleanName === "鄉鎮市") {
+                                township = val;
+                            } else if (!township && cleanName === "行政區" && (val.includes("鎮") || val.includes("鄉") || val.includes("市"))) {
+                                township = val;
+                            }
                         } else if (cleanName.includes("地點") || cleanName.includes("位置")) {
                             location = val; 
                         } else if (cleanName.includes("地段")) {
@@ -630,13 +641,22 @@
                             agency = val;
                         } else if (cleanName.includes("分區") || cleanName.includes("土地")) {
                             landZoning = val;
-                        } else if (cleanName.includes("gxmedialinks") || cleanName.includes("media")) {
+                        } else if (cleanName.includes("gxmedialinks") || cleanName.includes("media") || cleanName.includes("links")) {
                             images = val ? val.split(' ').filter(u => u.trim() !== '') : [];
                         }
                     });
 
-                    const townshipKey = township ? township.substring(0, 3) : "未知鄉鎮";
-                    if (!townshipKey) return;
+                    // 備用匹配方案：若沒有從 ExtendedData 裡讀到「鄉鎮市」
+                    if (!township) {
+                        for (let d of dataNodes) {
+                            if (d.getAttribute("name") === "鄉鎮市") {
+                                township = d.textContent.trim();
+                            }
+                        }
+                    }
+                    if (!township) township = "其他";
+
+                    const townshipKey = township.substring(0, 3);
                     
                     // 萬一 KML 真的毫無案件 ID 欄位，系統退回暫存流水號，防止崩潰
                     if (!idRaw) {
@@ -645,14 +665,13 @@
 
                     const uniqueId = `${category}_${idRaw}_${globalPointIndex++}`;
 
+                    // 組合最適合點位顯示的 finalName
                     let finalName = "";
-                    let validPmName = (pmName && !pmName.startsWith("點") && !pmName.toLowerCase().startsWith("point") && pmName !== "未命名地點") ? pmName : "";
                     let landStr = [landSec, landNum].filter(Boolean).join(' ');
-
                     if (category === '雜草') {
-                        finalName = landStr || location || validPmName || "未提供地段地號";
+                        finalName = landStr || location || "未提供地段地號";
                     } else {
-                        finalName = location || validPmName || landStr || "未提供地點";
+                        finalName = location || landStr || "未提供地點";
                     }
 
                     if (!mapData[townshipKey]) mapData[townshipKey] = { name: townshipKey, points: [] };
@@ -679,12 +698,14 @@
                 performSyncAndEnter();
             } else {
                 const splash = document.getElementById('splash-screen');
-                splash.style.opacity = '0';
+                if (splash) splash.style.opacity = '0';
                 setTimeout(() => {
-                    splash.style.visibility = 'hidden';
+                    if (splash) splash.style.visibility = 'hidden';
                     const loginScreen = document.getElementById('login-screen');
-                    loginScreen.classList.remove('hidden');
-                    loginScreen.style.display = 'flex';
+                    if (loginScreen) {
+                        loginScreen.classList.remove('hidden');
+                        loginScreen.style.display = 'flex';
+                    }
                 }, 500);
             }
         }
@@ -766,7 +787,7 @@
                 else if (poi.category === '菸蒂') colorClass = 'text-orange-400';
                 else if (poi.category === '雜草') colorClass = 'text-emerald-400';
 
-                marker.bindTooltip(`<span class="${colorClass} font-bold">${poi.name}${isDone ? ' (已完成)' : ''}</span>`, { permanent: true, direction: 'top', className: 'glass-tooltip', offset: [0, -35] });
+                marker.bindTooltip(`<span class="${colorClass} font-bold">${poi.name}${isDone ? ' (已巡檢/結案)' : ''}</span>`, { permanent: true, direction: 'top', className: 'glass-tooltip', offset: [0, -35] });
                 activeLayers.push(marker); 
                 bounds.push([poi.lat, poi.lng]);
             });
@@ -824,6 +845,7 @@
             document.getElementById('progress-bar').style.width = `${pct}%`;
         }
         
+        // 🚀 【介面大改版】：完美渲染「填入與取消」大按鈕
         function updateBottomSheetStatus() {
             if(!currentItemId || !currentTownshipId) return;
             
@@ -861,12 +883,14 @@
                 }
                 
                 if (isDone) {
+                    // 已巡檢 ➔ 大按鈕顯示「取消」，呈現高質感翡翠綠
                     btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-emerald-600 border-emerald-400 text-white cursor-pointer h-[55px] min-w-[110px]";
-                    if(markIcon) markIcon.className = "ph-fill ph-check-circle text-lg";
+                    if(markIcon) markIcon.className = "ph-fill ph-check-circle text-lg text-white";
                     if(markText) markText.innerText = "取消";
                 } else {
+                    // 未巡檢 ➔ 大按鈕顯示「填入」，呈現高質感深灰
                     btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all bg-slate-800 border-slate-600 text-slate-400 cursor-pointer h-[55px] min-w-[110px]";
-                    if(markIcon) markIcon.className = "ph-fill ph-warning-circle text-lg";
+                    if(markIcon) markIcon.className = "ph-fill ph-warning-circle text-lg text-slate-500";
                     if(markText) markText.innerText = "填入";
                 }
             }
@@ -876,12 +900,12 @@
             if(!currentItemId || !currentTownshipId) return;
             const poiData = mapData[currentTownshipId].points.find(p => p.id === currentItemId);
             
-            // 🚀 雜草案件唯讀，保護不允許觸發任何後端寫入同步
+            // 🚀 雜草案件直接排除，不允許觸發任何後端寫入同步
             if (poiData.category === '雜草') return;
             
-            // 防空檢查
-            if (!poiData.rawId) {
-                return showToast("❌ 點位 ID 解析錯誤（空值），無法向後端進行同步！請檢查 KML 檔案格式。", "error");
+            // 🚨 強力空值防守攔截，確保發送出去的 ID 絕對不為空！
+            if (!poiData.rawId || poiData.rawId.trim() === "") {
+                return showToast("❌ 點位 ID 提取失敗（空值），防禦機制已攔截傳輸！請確認您導入的 KML 圖資是否正確。", "error");
             }
 
             if (!inspectionState[currentItemId]) {
@@ -902,7 +926,7 @@
             markIcon.className = "ph ph-spinner animate-spin text-lg";
             markText.innerText = '同步中...';
 
-            // 🚀 填入 / 取消 單向指令信號
+            // 🚀 填入 / 取消 單向純淨指令信號
             const apiAction = newState ? "填入" : "取消";
 
             try {
@@ -913,10 +937,8 @@
                         action: 'update_status',
                         category: poiData.category,
                         period: currentPeriod,
-                        itemId: poiData.rawId,
-                        status: apiAction, // 填入 或 取消
-                        township: mapData[currentTownshipId].name,
-                        pointName: poiData.name
+                        itemId: poiData.rawId, // 100% 帶有來自 <name> 的真實編號 (如 3, 4, 5...)
+                        status: apiAction
                     })
                 });
 
@@ -1102,8 +1124,9 @@
             // 🚀 雜草案件直接排除，不允許上傳
             if (poiData.category === '雜草') return;
             
-            if (!poiData.rawId) {
-                return showToast("❌ 點位 ID 解析錯誤（空值），無法上傳照片與打卡！", "error");
+            // 🚨 強力編號驗證保護
+            if (!poiData.rawId || poiData.rawId.trim() === "") {
+                return showToast("❌ 點位 ID 提取失敗（空值），無法上傳照片與打卡！", "error");
             }
 
             const storageKey = getStorageKey(currentItemId, poiData.category);
