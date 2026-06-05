@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="髒亂點巡檢">
     <meta name="theme-color" content="#020617">
     <link rel="manifest" id="dynamic-manifest">
-    <title>115年南投縣髒亂點巡查系統 v5.12</title>
+    <title>115年南投縣髒亂點巡查系統 v5.15</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -55,6 +55,7 @@
         .badge-waste { background-color: rgba(71, 85, 105, 0.3); color: #94a3b8; border: 1px solid #475569; }
         .badge-cigarette { background-color: rgba(249, 115, 22, 0.2); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.4); }
         .badge-weed { background-color: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .township-pill { white-space: nowrap; padding: 0.25rem 1rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; transition: all 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
@@ -78,7 +79,7 @@
         </div>
         <h1 class="text-3xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500 mb-2">髒亂點巡檢</h1>
         <p class="text-slate-400 tracking-widest text-sm uppercase">115年 廢棄物/菸蒂/雜草</p>
-        <p class="text-sm text-sky-400 font-bold mt-2 shadow-black">v5.12 視覺強化版</p>
+        <p class="text-sm text-sky-400 font-bold mt-2 shadow-black">v5.15 期別鎖定版</p>
         <div id="loading-status" class="mt-12 text-sky-400 text-sm animate-pulse flex items-center gap-2"><i class="ph ph-spinner animate-spin text-lg"></i> 載入 KML 圖資中...</div>
         <div id="kml-upload-fallback" class="hidden mt-8 flex flex-col items-center">
             <p class="text-red-400 text-xs mb-3 font-bold bg-red-500/20 px-4 py-2 rounded-lg">無法自動讀取 KML，請手動選擇「115年南投縣髒亂點.kml」</p>
@@ -91,7 +92,7 @@
             <div class="w-16 h-16 bg-sky-500/20 rounded-full flex items-center justify-center mb-4"><i class="ph-fill ph-lock-key text-3xl text-sky-400"></i></div>
             <h2 class="text-xl font-bold text-white mb-2 tracking-widest">系統登入</h2>
             <p class="text-slate-400 text-sm mb-2">請輸入授權碼以存取巡檢資料</p>
-            <p class="text-xs text-sky-400 font-bold mb-6">v5.12 視覺強化版</p>
+            <p class="text-xs text-sky-400 font-bold mb-6">v5.15 期別鎖定版</p>
             <input type="password" id="pwd-input" placeholder="請輸入密碼" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white text-center tracking-widest focus:outline-none focus:border-sky-400 mb-2 transition-colors">
             <p id="pwd-error" class="text-red-400 text-xs mb-4 h-4 opacity-0 transition-opacity">密碼錯誤，請重新輸入</p>
             <button id="btn-login" onclick="checkPassword()" class="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold py-3 px-4 rounded-xl shadow-[0_0_15px_rgba(14,165,233,0.4)] transition-all active:scale-95 tracking-widest cursor-pointer flex justify-center items-center gap-2">進入系統</button>
@@ -119,7 +120,7 @@
                 <button class="segmented-btn" onclick="setCategoryFilter('一般廢棄物')"><i class="ph-fill ph-trash"></i> 廢棄物</button>
                 <button class="segmented-btn" onclick="setCategoryFilter('菸蒂')"><i class="ph-fill ph-cigarette"></i> 菸蒂</button>
                 <button class="segmented-btn" onclick="setCategoryFilter('雜草')"><i class="ph-fill ph-leaf"></i> 雜草</button>
-                <button class="segmented-btn" onclick="setCategoryFilter('一般廢棄物+菸蒂')"><i class="ph-fill ph-list-checks"></i> 待巡檢</button>
+                <button class="segmented-btn" onclick="setCategoryFilter('一般廢棄物+菸蒂')"><i class="ph-fill ph-trash text-xs"></i><i class="ph-fill ph-cigarette text-xs -ml-1"></i> 廢+菸</button>
             </div>
             <div id="period-toggle-container" class="flex justify-center mb-3 transition-opacity duration-300">
                 <div class="period-toggle-bg p-1 rounded-full flex items-center shadow-lg">
@@ -213,18 +214,19 @@
         function hidePwaPrompt() { const p = document.getElementById('pwa-prompt'); p.classList.add('translate-y-[-150%]'); setTimeout(() => p.classList.add('hidden'), 300); }
 
         // ===== 全域狀態 =====
-        const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMwTbzT29t_oBvnSmoHENNG5piiWbQHeE7BBU5gjPr9aitoeiTNKpZH9jyyjL7j6mE/exec";
+        const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxLOF9yJrBJYh7YGF9SLuWzwhqKiqV4lQ80M_syetDEw7MlBLWVpPVQS4rCm9evjyhc/exec";
         const SYSTEM_PASSWORD = "54004658";
         let mapData = {};
         let inspectionState = JSON.parse(localStorage.getItem('nantou_messy_inspection_v2')) || {};
         let inspectionPhotos = JSON.parse(localStorage.getItem('nantou_messy_photos_v2')) || {};
         let currentTownshipId = null, currentItemId = null, currentPeriod = 'H1', currentCategoryFilter = '全部';
+        let lockedPeriod = null; // ★ 鎖定打開面板時的期別
 
         function setCategoryFilter(cat) {
             currentCategoryFilter = cat;
             document.querySelectorAll('#category-selector .segmented-btn').forEach(btn => {
                 const txt = btn.innerText.replace(/\s+/g, '');
-                if (txt.includes(cat.replace(/\s+/g, '')) || (cat === '全部' && txt.includes('全部')) || (cat === '一般廢棄物+菸蒂' && txt.includes('待巡檢'))) {
+                if (txt.includes(cat.replace(/\s+/g, '')) || (cat === '全部' && txt.includes('全部')) || (cat === '一般廢棄物+菸蒂' && txt.includes('廢+菸'))) {
                     btn.classList.add('active');
                 } else {
                     btn.classList.remove('active');
@@ -238,7 +240,7 @@
             } else {
                 pc.style.display = 'flex';
                 const lbl = currentPeriod === 'H1' ? '上半年' : '下半年';
-                document.getElementById('progress-period-label').innerText = (cat === '一般廢棄物+菸蒂') ? `巡檢類別 ${lbl}` : lbl;
+                document.getElementById('progress-period-label').innerText = (cat === '一般廢棄物+菸蒂') ? `廢+菸 ${lbl}` : lbl;
                 if(badge) { badge.style.display = 'inline-block'; badge.innerText = `當前: ${lbl}`; }
             }
             hideBottomSheet();
@@ -269,9 +271,13 @@
             if(!isListView) loadTownship(currentTownshipId, true);
             else renderListView();
         }
-        function getStorageKey(poiId, category) { return category === '雜草' ? `${poiId}_weed` : `${poiId}_${currentPeriod}`; }
 
-        // ===== KML =====
+        function getStorageKey(poiId, category) {
+            const period = lockedPeriod !== null ? lockedPeriod : currentPeriod;
+            return category === '雜草' ? `${poiId}_weed` : `${poiId}_${period}`;
+        }
+
+        // ===== KML 載入與解析 =====
         async function loadKMLData() {
             try {
                 const ts = new Date().getTime();
@@ -348,7 +354,17 @@
                     let finalName = cat === '雜草' ? (land || location || "未提供地段地號") : (location || land || rawName || "未提供地點");
                     const tkey = township.substring(0, 3);
                     if (!mapData[tkey]) mapData[tkey] = { name: tkey, points: [] };
-                    mapData[tkey].points.push({ id: uid, rawId: idRaw, category: cat, name: finalName, lat, lng, agency: agency || "未提供", landZoning: landZoning || "未提供", images });
+                    mapData[tkey].points.push({
+                        id: uid, rawId: idRaw, category: cat, name: finalName,
+                        lat, lng,
+                        agency: agency || "未提供",
+                        landZoning: landZoning || "未提供",
+                        images,
+                        location: location || "",
+                        landSec: landSec || "",
+                        landNum: landNum || "",
+                        fullTownship: township
+                    });
                 });
             });
             if (Object.keys(mapData).length === 0) showToast("⚠️ 無法解析點位", "warning");
@@ -363,7 +379,7 @@
             }
         }
 
-        // ===== 地圖 =====
+        // ===== 地圖核心 =====
         let map, activeLayers = [], currentBounds = null, userMarker = null, isListView = false;
 
         function createCategoryIcon(cat, isDone) {
@@ -406,7 +422,7 @@
             const data = mapData[tId];
             if (!data) return;
             document.getElementById('header-title').innerText = `${data.name} 查報視角`;
-            document.querySelectorAll('.township-pill').forEach(b => { b.className = b.dataset.id === tId ? 'township-pill shrink-0 ... bg-sky-600/90 border-sky-400 text-white' : 'township-pill shrink-0 ... bg-slate-800/60 border-slate-700 text-slate-400'; });
+            document.querySelectorAll('.township-pill').forEach(b => { b.className = b.dataset.id === tId ? 'township-pill bg-sky-600/90 border border-sky-400 text-white' : 'township-pill bg-slate-800/60 border border-slate-700 text-slate-400 hover:bg-slate-700 cursor-pointer'; });
             activeLayers.forEach(l => map.removeLayer(l)); activeLayers = [];
             if (!keepHighlight) hideBottomSheet();
             const bounds = drawMapForTownship(tId);
@@ -421,7 +437,7 @@
             let total = 0, comp = 0;
             data.points.forEach(poi => { if(isCategoryVisible(poi.category)) { total++; if((poi.category==='雜草'?inspectionState[poi.id]?.done:inspectionState[poi.id]?.[currentPeriod])) comp++; } });
             const pct = total? Math.round(comp/total*100) : 0;
-            let ptxt = currentCategoryFilter==='雜草'?'總體':(currentCategoryFilter==='一般廢棄物+菸蒂'?'巡檢類別':(currentPeriod==='H1'?'上半年':'下半年'));
+            let ptxt = currentCategoryFilter==='雜草'?'總體':(currentCategoryFilter==='一般廢棄物+菸蒂'?'廢+菸':(currentPeriod==='H1'?'上半年':'下半年'));
             document.getElementById('progress-text').innerHTML = `🏆 <span id="progress-period-label">${ptxt}</span>達成率：${comp}/${total} 點位`;
             document.getElementById('progress-percent').innerText = `${pct}%`;
             document.getElementById('progress-bar').style.width = `${pct}%`;
@@ -433,13 +449,15 @@
             if(!poi) return;
             const state = inspectionState[currentItemId] || {}, btn = document.getElementById('mark-btn'), mt = document.getElementById('mark-text'), mi = document.getElementById('mark-icon');
             const pt = document.getElementById('mark-period-text'), up = document.getElementById('photo-upload-container'), rn = document.getElementById('weed-readonly-notice');
+            const activePeriod = lockedPeriod !== null ? lockedPeriod : currentPeriod;
+
             if (poi.category === '雜草') {
                 if(btn) btn.style.display = 'none'; if(up) up.style.display = 'none'; if(rn) rn.classList.remove('hidden');
             } else {
                 if(btn) btn.style.display = 'flex'; if(up) up.style.display = 'block'; if(rn) rn.classList.add('hidden');
-                const isDone = state[currentPeriod] || false;
-                if(pt) pt.innerText = currentPeriod==='H1'?'上半年巡檢日期':'下半年巡檢日期';
-                btn.className = isDone ? "shrink-0 flex flex-col ... bg-emerald-600 border-emerald-400 text-white cursor-pointer h-[55px]" : "shrink-0 flex flex-col ... bg-slate-800 border-slate-600 text-slate-400 cursor-pointer h-[55px]";
+                const isDone = state[activePeriod] || false;
+                if(pt) pt.innerText = activePeriod === 'H1' ? '上半年巡檢日期' : '下半年巡檢日期';
+                btn.className = isDone ? "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all border bg-emerald-600 border-emerald-400 text-white cursor-pointer h-[55px] min-w-[110px] hover:-translate-y-0.5" : "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all border bg-slate-800 border-slate-600 text-slate-400 cursor-pointer h-[55px] min-w-[110px] hover:-translate-y-0.5";
                 mi.className = isDone ? "ph-fill ph-check-circle text-lg text-white" : "ph-fill ph-warning-circle text-lg text-slate-500";
                 mt.innerText = isDone ? "取消" : "填入";
             }
@@ -450,18 +468,19 @@
             if(!currentItemId || !currentTownshipId) return;
             const poi = mapData[currentTownshipId].points.find(p => p.id === currentItemId);
             if (poi.category === '雜草') return;
+            const activePeriod = lockedPeriod !== null ? lockedPeriod : currentPeriod;
             if (!inspectionState[currentItemId]) inspectionState[currentItemId] = { H1: false, H2: false, done: false };
-            let newState = !inspectionState[currentItemId][currentPeriod];
+            let newState = !inspectionState[currentItemId][activePeriod];
             const btn = document.getElementById('mark-btn'), mt = document.getElementById('mark-text'), mi = document.getElementById('mark-icon');
             const origClass = btn.className, origIcon = mi.className, origText = mt.innerText;
-            btn.className = "shrink-0 ... bg-slate-800 border-slate-700 text-sky-400 cursor-wait h-[55px]";
+            btn.className = "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all border bg-slate-800 border-slate-700 text-sky-400 cursor-wait h-[55px] min-w-[110px]";
             mi.className = "ph ph-spinner animate-spin text-lg"; mt.innerText = '同步中...';
             try {
-                const res = await fetch(GOOGLE_APP_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'update_status', category: poi.category, period: currentPeriod, lat: poi.lat, lng: poi.lng, status: newState ? "填入" : "取消" }) });
+                const res = await fetch(GOOGLE_APP_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'update_status', category: poi.category, period: activePeriod, lat: poi.lat, lng: poi.lng, status: newState ? "填入" : "取消" }) });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const result = await res.json();
                 if (result.status === "success" || result.status === "warning") {
-                    inspectionState[currentItemId][currentPeriod] = newState;
+                    inspectionState[currentItemId][activePeriod] = newState;
                     saveState(); updateBottomSheetStatus();
                     showToast(result.status==="warning"?`⚠️ ${result.message}`:`✅ 已成功【${newState?'填入':'取消'}】巡檢日期！`, result.status==="warning"?"warning":"success");
                 } else {
@@ -473,6 +492,7 @@
 
         function showBottomSheet(poi, tId) {
             currentItemId = poi.id;
+            lockedPeriod = currentPeriod; // ★ 鎖定打開面板時的期別
             document.getElementById('sheet-title').innerText = poi.name;
             document.getElementById('sheet-id-badge').innerText = `案件數: ${poi.rawId}`;
             const cb = document.getElementById('sheet-category-badge'); cb.innerText = poi.category;
@@ -489,9 +509,13 @@
             document.getElementById('bottom-sheet').classList.remove('hidden-sheet');
         }
 
-        function hideBottomSheet() { document.getElementById('bottom-sheet').classList.add('hidden-sheet'); currentItemId = null; }
+        function hideBottomSheet() {
+            document.getElementById('bottom-sheet').classList.add('hidden-sheet');
+            currentItemId = null;
+            lockedPeriod = null; // ★ 解鎖
+        }
 
-        // ===== 照片 =====
+        // ===== 照片處理 =====
         function handlePhotoUpload(event) {
             const files = event.target.files;
             if(!files.length || !currentItemId || !currentTownshipId) return;
@@ -541,6 +565,10 @@
             });
         }
 
+        function sanitizeFilename(str) {
+            return str.replace(/[\/\\:*?"<>|]/g, '-').replace(/\s+/g, '_').substring(0, 100);
+        }
+
         async function uploadPhotosToDrive() {
             if (!currentItemId || !currentTownshipId) return;
             const poi = mapData[currentTownshipId].points.find(p => p.id === currentItemId);
@@ -548,26 +576,59 @@
             const storageKey = getStorageKey(currentItemId, poi.category);
             const photos = (inspectionPhotos[storageKey] || []).filter(p => !p.uploaded);
             if (!photos.length) return showToast("⚠️ 沒有需要上傳的新照片！","warning");
+
+            const activePeriod = lockedPeriod !== null ? lockedPeriod : currentPeriod;
+            let baseName = (poi.location && poi.location.trim()) ? poi.location.trim() :
+                           (poi.landNum && poi.landNum.trim()) ? poi.landNum.trim() :
+                           poi.rawId;
+            baseName = sanitizeFilename(baseName);
+            const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15);
+            const finalBase = baseName + '_' + timestamp;
+
             const btn = document.getElementById('btn-upload-drive');
             btn.disabled = true; btn.classList.add('opacity-50');
             let success = 0;
             try {
-                for (let i=0; i<photos.length; i++) {
+                for (let i = 0; i < photos.length; i++) {
                     if (photos[i].uploaded) continue;
                     const base64 = photos[i].data.split(',')[1];
+                    const filename = `${finalBase}_${i}.jpg`;
                     const res = await fetch(GOOGLE_APP_SCRIPT_URL, {
                         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: JSON.stringify({ action: 'upload_photo', category: poi.category, period: currentPeriod, lat: poi.lat, lng: poi.lng, status: "填入", filename: `${poi.lat}_${poi.lng}_${Date.now()}.jpg`, mimeType: "image/jpeg", base64: base64, township: mapData[currentTownshipId].name, pointName: poi.name, agency: poi.agency })
+                        body: JSON.stringify({
+                            action: 'upload_photo',
+                            category: poi.category,
+                            period: activePeriod,
+                            lat: poi.lat,
+                            lng: poi.lng,
+                            status: "填入",
+                            filename: filename,
+                            mimeType: "image/jpeg",
+                            base64: base64,
+                            township: poi.fullTownship,
+                            pointName: poi.name,
+                            agency: poi.agency
+                        })
                     });
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     const result = await res.json();
-                    if (result.status==="success"||result.status==="warning") { photos[i].uploaded = true; success++; }
-                    else throw new Error(result.message);
+                    if (result.status === "success" || result.status === "warning") {
+                        photos[i].uploaded = true;
+                        success++;
+                    } else {
+                        throw new Error(result.message);
+                    }
                 }
-            } catch(e) { showToast(`❌ 上傳失敗：${e.message}`,"error"); }
+            } catch(e) { showToast(`❌ 上傳失敗：${e.message}`, "error"); }
             finally {
                 btn.disabled = false; btn.classList.remove('opacity-50');
-                if (success) { inspectionState[currentItemId][currentPeriod] = true; saveState(); renderPhotos(); updateBottomSheetStatus(); showToast(`✅ 成功上傳 ${success} 張照片！`,"success"); }
+                if (success) {
+                    inspectionState[currentItemId][activePeriod] = true;
+                    saveState(); renderPhotos(); updateBottomSheetStatus();
+                    showToast(`✅ 成功上傳 ${success} 張照片至 ${poi.fullTownship} 資料夾！`, "success");
+                } else {
+                    updateBottomSheetStatus();
+                }
             }
         }
 
@@ -658,7 +719,7 @@
             const sel = document.getElementById('township-selector'); sel.innerHTML = '';
             Object.keys(mapData).forEach(id => {
                 const btn = document.createElement('div'); btn.dataset.id = id;
-                btn.className = 'township-pill shrink-0 whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow border bg-slate-800/60 border-slate-700 text-slate-400 cursor-pointer hover:bg-slate-700';
+                btn.className = 'township-pill bg-slate-800/60 border border-slate-700 text-slate-400 cursor-pointer hover:bg-slate-700';
                 btn.innerText = mapData[id].name; btn.onclick = () => loadTownship(id);
                 sel.appendChild(btn);
             });
