@@ -220,7 +220,7 @@
         let inspectionState = JSON.parse(localStorage.getItem('nantou_messy_inspection_v2')) || {};
         let inspectionPhotos = JSON.parse(localStorage.getItem('nantou_messy_photos_v2')) || {};
         let currentTownshipId = null, currentItemId = null, currentPeriod = 'H1', currentCategoryFilter = '全部';
-        let lockedPeriod = null; // ★ 鎖定打開面板時的期別
+        let lockedPeriod = null;
 
         function setCategoryFilter(cat) {
             currentCategoryFilter = cat;
@@ -492,7 +492,7 @@
 
         function showBottomSheet(poi, tId) {
             currentItemId = poi.id;
-            lockedPeriod = currentPeriod; // ★ 鎖定打開面板時的期別
+            lockedPeriod = currentPeriod;
             document.getElementById('sheet-title').innerText = poi.name;
             document.getElementById('sheet-id-badge').innerText = `案件數: ${poi.rawId}`;
             const cb = document.getElementById('sheet-category-badge'); cb.innerText = poi.category;
@@ -512,7 +512,7 @@
         function hideBottomSheet() {
             document.getElementById('bottom-sheet').classList.add('hidden-sheet');
             currentItemId = null;
-            lockedPeriod = null; // ★ 解鎖
+            lockedPeriod = null;
         }
 
         // ===== 照片處理 =====
