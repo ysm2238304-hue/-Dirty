@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="髒亂點巡檢">
     <meta name="theme-color" content="#020617">
     <link class="manifest" id="dynamic-manifest">
-    <title>115年南投縣髒亂點巡查系統 v5.22</title>
+    <title>115年南投縣髒亂點巡查系統 v5.26</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -22,7 +22,7 @@
         html, body { width: 100vw; height: 100dvh; font-family: 'Noto Sans TC', sans-serif; background-color: #020617; color: #f8fafc; margin: 0; padding: 0; overflow: hidden; overscroll-behavior: none; }
         .glass { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .glass-panel { background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.7); }
-        #splash-screen, #login-screen { transition: opacity 0.5s ease-in-out; }
+        #splash-screen { transition: opacity 0.5s ease-in-out; }
         .pulse-ring { animation: pulse 2s infinite cubic-bezier(0.215, 0.61, 0.355, 1); }
         @keyframes pulse { 0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 20px rgba(14, 165, 233, 0); } 100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); } }
         .leaflet-control-attribution { display: none !important; }
@@ -79,7 +79,7 @@
         </div>
         <h1 class="text-3xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500 mb-2">髒亂點巡檢</h1>
         <p class="text-slate-400 tracking-widest text-sm uppercase">115年 廢棄物/菸蒂/雜草</p>
-        <p class="text-sm text-sky-400 font-bold mt-2 shadow-black">v5.22 穩定版</p>
+        <p class="text-sm text-sky-400 font-bold mt-2 shadow-black">v5.27 穩定版</p>
         <div id="loading-status" class="mt-12 text-sky-400 text-sm animate-pulse flex items-center gap-2"><i class="ph ph-spinner animate-spin text-lg"></i> 載入 KML 圖資中...</div>
         <div id="kml-upload-fallback" class="hidden mt-8 flex flex-col items-center">
             <p class="text-red-400 text-xs mb-3 font-bold bg-red-500/20 px-4 py-2 rounded-lg">無法自動讀取 KML，請手動選擇「115年南投縣髒亂點.kml」</p>
@@ -87,22 +87,18 @@
         </div>
     </div>
 
-    <div id="login-screen" class="fixed inset-0 z-[9998] hidden flex-col items-center justify-center bg-slate-950/95 backdrop-blur-xl">
-        <div class="glass-panel p-8 rounded-2xl flex flex-col items-center w-10/12 max-w-sm shadow-2xl border border-sky-500/30">
-            <div class="w-16 h-16 bg-sky-500/20 rounded-full flex items-center justify-center mb-4"><i class="ph-fill ph-lock-key text-3xl text-sky-400"></i></div>
-            <h2 class="text-xl font-bold text-white mb-2 tracking-widest">系統登入</h2>
-            <p class="text-slate-400 text-sm mb-2">請輸入授權碼以存取巡檢資料</p>
-            <p class="text-xs text-sky-400 font-bold mb-6">v5.22 穩定版</p>
-            <input type="password" id="pwd-input" placeholder="請輸入密碼" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white text-center tracking-widest focus:outline-none focus:border-sky-400 mb-2 transition-colors">
-            <p id="pwd-error" class="text-red-400 text-xs mb-4 h-4 opacity-0 transition-opacity">密碼錯誤，請重新輸入</p>
-            <button id="btn-login" onclick="checkPassword()" class="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-bold py-3 px-4 rounded-xl shadow-[0_0_15px_rgba(14,165,233,0.4)] transition-all active:scale-95 tracking-widest cursor-pointer flex justify-center items-center gap-2">進入系統</button>
-        </div>
-    </div>
-
     <div id="lightbox" class="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-md hidden flex-col items-center justify-center opacity-0 p-4" onclick="closeLightbox()">
         <div class="absolute top-[max(1.5rem,env(safe-area-inset-top))] right-4 z-[100] bg-slate-800/80 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer hover:bg-slate-700 text-white border border-slate-600 shadow-xl" onclick="closeLightbox(); event.stopPropagation();"><i class="ph-bold ph-x text-xl"></i></div>
         <div id="lightbox-loading" class="absolute flex flex-col items-center justify-center gap-3 text-sky-400 z-0"><i class="ph ph-spinner animate-spin text-5xl"></i><span class="text-sm font-bold tracking-widest mt-2">載入高畫質原圖...</span></div>
-        <img id="lightbox-img" src="" class="max-w-full max-h-[85dvh] object-contain rounded-xl shadow-2xl relative z-10 scale-95 opacity-0 cursor-pointer" onclick="closeLightbox(); event.stopPropagation();">
+        <img id="lightbox-img" src="" referrerpolicy="no-referrer" class="max-w-full max-h-[85dvh] object-contain rounded-xl shadow-2xl relative z-10 scale-95 opacity-0 cursor-pointer" onclick="closeLightbox(); event.stopPropagation();">
+        <div id="lightbox-error" class="hidden absolute flex-col items-center justify-center gap-3 text-red-400 z-20 bg-slate-900/90 p-5 rounded-2xl border border-red-500/30 shadow-2xl max-w-xs text-center pointer-events-auto" onclick="event.stopPropagation()">
+            <i class="ph-fill ph-warning-circle text-5xl text-rose-500"></i>
+            <span class="text-sm font-bold text-slate-200">圖片載入逾時或網路不穩</span>
+            <div class="flex gap-2 mt-2 w-full">
+                <button onclick="retryLightbox()" class="flex-1 bg-sky-600 hover:bg-sky-500 text-white py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer"><i class="ph ph-arrow-clockwise"></i> 重新載入</button>
+                <a id="lightbox-direct-link" href="#" target="_blank" class="flex-1 bg-slate-800 hover:bg-slate-700 text-sky-400 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 border border-slate-700"><i class="ph ph-arrow-square-out"></i> 開啟原圖</a>
+            </div>
+        </div>
     </div>
 
     <div id="pwa-prompt" class="fixed top-4 left-4 right-4 z-[9997] bg-sky-600 text-white p-4 rounded-xl shadow-2xl flex items-start gap-3 hidden transition-transform translate-y-[-150%]">
@@ -153,7 +149,14 @@
             <div class="flex justify-between items-center mb-4"><div class="w-8 h-1.5"></div><div class="w-12 h-1.5 bg-slate-600 rounded-full cursor-pointer" onclick="hideBottomSheet()"></div><button class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-800/80 text-slate-400 hover:text-white cursor-pointer" onclick="hideBottomSheet()"><i class="ph-bold ph-x text-lg"></i></button></div>
             <div id="sheet-content" class="flex-1">
                 <div class="flex justify-between items-start mb-4 border-b border-slate-700/50 pb-4">
-                    <div class="pr-2"><div class="flex items-center gap-2 mb-1"><span class="text-[10px] font-bold px-2 py-0.5 rounded" id="sheet-category-badge">類別</span><span class="text-xs text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700" id="sheet-id-badge">編號</span></div><h3 class="text-lg font-bold text-white leading-tight" id="sheet-title">點位名稱</h3></div>
+                    <div class="pr-2">
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded" id="sheet-category-badge">類別</span>
+                            <span class="text-xs text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700" id="sheet-id-badge">編號</span>
+                            <span class="text-xs text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-500/30 hidden font-bold items-center gap-1" id="sheet-distance-badge"><i class="ph-bold ph-navigation-arrow"></i> <span id="sheet-distance-text"></span></span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white leading-tight" id="sheet-title">點位名稱</h3>
+                    </div>
                     <button id="mark-btn" class="shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all border cursor-pointer h-[55px] min-w-[110px] hover:-translate-y-0.5" onclick="toggleItemStatus()"><span class="text-[10px] opacity-70 leading-none" id="mark-period-text">上半年巡檢日期</span><div class="flex items-center gap-1 mt-0.5"><i class="ph-fill ph-check-circle" id="mark-icon"></i><span id="mark-text" class="leading-none">未巡檢</span></div></button>
                 </div>
                 <div class="text-sm text-slate-300 mb-4 w-full bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 flex flex-col gap-2" id="sheet-desc"></div>
@@ -212,14 +215,44 @@
         function showPwaPrompt(msg, fn) { const p = document.getElementById('pwa-prompt'); p.querySelector('p').innerText = msg; p.classList.remove('hidden'); setTimeout(() => p.classList.remove('translate-y-[-150%]'), 100); if (fn) p.onclick = fn; }
         function hidePwaPrompt() { const p = document.getElementById('pwa-prompt'); p.classList.add('translate-y-[-150%]'); setTimeout(() => p.classList.add('hidden'), 300); }
 
-        // ★ 您的新部署網址
         const GOOGLE_APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzj2-tyPna6Jl880lwukr1O6HzhNOLiai27dmKpTrlM2InhM6CB_MeoGK2T6jv1P7lx/exec";
-        const SYSTEM_PASSWORD = "54004658";
         let mapData = {};
         let inspectionState = JSON.parse(localStorage.getItem('nantou_messy_inspection_v2')) || {};
         let inspectionPhotos = JSON.parse(localStorage.getItem('nantou_messy_photos_v2')) || {};
         let currentTownshipId = null, currentItemId = null, currentPeriod = 'H1', currentCategoryFilter = '全部';
         let lockedPeriod = null;
+        let userLatLng = null, currentLightboxUrl = null, lightboxAttempt = 0;
+
+        function optimizePhotoUrl(url) {
+            if (!url) return "";
+            let clean = url.trim().replace(/^https?:\/\//i, 'https://');
+            clean = clean.replace(/authuser=0&?/g, '').replace(/\?&/g, '?');
+
+            // Google Drive 檢視連結轉為高解析縮圖直鏈
+            const driveMatch = clean.match(/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9_-]+)/i);
+            if (driveMatch && driveMatch[1]) {
+                return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w1600`;
+            }
+
+            // Google My Maps / Hostedimage 參數優化（將造成超時的 s16383 替換為秒開且高解析的 s1600）
+            if (clean.includes('fife=s16383') || clean.includes('=s16383')) {
+                clean = clean.replace(/fife=s16383/g, 'fife=s1600').replace(/=s16383/g, '=s1600');
+            } else if (clean.includes('googleusercontent.com') && !clean.includes('fife=') && !clean.includes('=s')) {
+                clean += (clean.includes('?') ? '&' : '?') + 'fife=s1600';
+            }
+            return clean;
+        }
+
+        function getDistanceTo(lat, lng) {
+            if (!userLatLng || isNaN(lat) || isNaN(lng)) return null;
+            return userLatLng.distanceTo(L.latLng(lat, lng));
+        }
+
+        function formatDistance(meters) {
+            if (meters === null || meters === undefined) return "";
+            if (meters < 1000) return `${Math.round(meters)} 公尺`;
+            return `${(meters / 1000).toFixed(1)} 公里`;
+        }
 
         function setCategoryFilter(cat) {
             currentCategoryFilter = cat;
@@ -276,7 +309,6 @@
             return category === '雜草' ? `${poiId}_weed` : `${poiId}_${period}`;
         }
 
-        // ===== KML 載入與解析 (加強錯誤處理) =====
         async function loadKMLData() {
             try {
                 const ts = new Date().getTime();
@@ -379,20 +411,13 @@
             });
             if (Object.keys(mapData).length === 0) throw new Error("未能從 KML 解析出任何點位");
             document.getElementById('loading-status').innerHTML = '<i class="ph-fill ph-check-circle text-emerald-400"></i> KML 載入成功！';
+            
+            // 移除密碼驗證流程，KML 解析完成後直接進入系統
             setTimeout(() => {
-                if (localStorage.getItem('nantou_messy_system_auth') === 'true') performSyncAndEnter();
-                else {
-                    document.getElementById('splash-screen').style.opacity = '0';
-                    setTimeout(() => {
-                        document.getElementById('splash-screen').style.visibility = 'hidden';
-                        document.getElementById('login-screen').classList.remove('hidden');
-                        document.getElementById('login-screen').style.display = 'flex';
-                    }, 500);
-                }
+                performSyncAndEnter();
             }, 800);
         }
 
-        // ===== 地圖核心 =====
         let map, activeLayers = [], currentBounds = null, userMarker = null, isListView = false;
 
         function createCategoryIcon(cat, isDone) {
@@ -408,7 +433,13 @@
         function initMap() {
             map = L.map('map', { zoomControl: false, tap: false }).setView([23.903, 120.951], 10);
             L.control.zoom({ position: 'topright' }).addTo(map);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap', subdomains: 'abcd', maxZoom: 20 }).addTo(map);
+            
+            // ★ 使用 Google 標準道路地圖 (Google Roadmap) 底圖瓦片
+            L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                subdomains: ['0', '1', '2', '3'],
+                maxZoom: 20
+            }).addTo(map);
+
             map.on('click', () => { if(!document.getElementById('bottom-sheet').classList.contains('hidden-sheet')) hideBottomSheet(); });
         }
 
@@ -476,7 +507,6 @@
             }
         }
 
-        // ===== 同步 =====
         async function toggleItemStatus() {
             if(!currentItemId || !currentTownshipId) return;
             const poi = mapData[currentTownshipId].points.find(p => p.id === currentItemId);
@@ -508,6 +538,20 @@
             lockedPeriod = currentPeriod;
             document.getElementById('sheet-title').innerText = poi.name;
             document.getElementById('sheet-id-badge').innerText = `案件數: ${poi.rawId}`;
+
+            // 即時更新距離資訊
+            const dist = getDistanceTo(poi.lat, poi.lng);
+            const distBadge = document.getElementById('sheet-distance-badge');
+            const distText = document.getElementById('sheet-distance-text');
+            if (dist !== null) {
+                distText.innerText = `距離約 ${formatDistance(dist)}`;
+                distBadge.classList.remove('hidden');
+                distBadge.classList.add('flex');
+            } else {
+                distBadge.classList.add('hidden');
+                distBadge.classList.remove('flex');
+            }
+
             const cb = document.getElementById('sheet-category-badge'); cb.innerText = poi.category;
             let bc = 'badge-waste'; if (poi.category==='菸蒂') bc='badge-cigarette'; else if (poi.category==='雜草') bc='badge-weed';
             cb.className = `text-[10px] font-bold px-2 py-0.5 rounded ${bc}`;
@@ -528,7 +572,6 @@
             lockedPeriod = null;
         }
 
-        // ===== 照片處理 =====
         function handlePhotoUpload(event) {
             const files = event.target.files;
             if(!files.length || !currentItemId || !currentTownshipId) return;
@@ -645,14 +688,48 @@
         }
 
         function openLightbox(url) {
+            currentLightboxUrl = url;
+            lightboxAttempt = 1;
             const lb = document.getElementById('lightbox'), img = document.getElementById('lightbox-img'), loading = document.getElementById('lightbox-loading');
+            const errBox = document.getElementById('lightbox-error'), directLink = document.getElementById('lightbox-direct-link');
+            
             lb.classList.remove('hidden'); void lb.offsetWidth; lb.classList.remove('opacity-0');
-            img.style.opacity = '0'; img.classList.add('scale-95'); loading.style.display = 'flex';
-            const clean = url.replace('authuser=0&',''), proxy = `https://images.weserv.nl/?url=${encodeURIComponent(clean)}&default=${encodeURIComponent(clean)}`;
-            img.onload = () => { loading.style.display = 'none'; img.style.opacity = '1'; img.classList.remove('scale-95'); img.classList.add('scale-100'); };
-            img.onerror = () => { if(img.src === proxy) img.src = clean; else loading.innerHTML = '<i class="ph-fill ph-warning-circle text-5xl text-red-500"></i><span class="text-sm font-bold text-red-400 mt-2">圖片載入失敗</span>'; };
-            img.src = proxy;
+            img.style.opacity = '0'; img.classList.add('scale-95');
+            loading.style.display = 'flex';
+            errBox.classList.add('hidden');
+
+            const optUrl = optimizePhotoUrl(url);
+            directLink.href = optUrl;
+
+            img.onload = () => {
+                loading.style.display = 'none';
+                errBox.classList.add('hidden');
+                img.style.opacity = '1';
+                img.classList.remove('scale-95');
+                img.classList.add('scale-100');
+            };
+
+            img.onerror = () => {
+                if (lightboxAttempt === 1) {
+                    // 第 2 段：直連失敗時，嘗試代理伺服器快取 (weserv)
+                    lightboxAttempt = 2;
+                    const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(optUrl)}&default=${encodeURIComponent(optUrl)}`;
+                    img.src = proxyUrl;
+                } else {
+                    // 第 3 段：顯示防呆重試與原圖外部開啟選項
+                    loading.style.display = 'none';
+                    errBox.classList.remove('hidden');
+                }
+            };
+
+            // 第 1 段：優先使用參數優化後的 Google 原始圖片網址直連
+            img.src = optUrl;
         }
+
+        function retryLightbox() {
+            if (currentLightboxUrl) openLightbox(currentLightboxUrl);
+        }
+
         function closeLightbox() { const lb = document.getElementById('lightbox'); lb.classList.add('opacity-0'); setTimeout(() => { lb.classList.add('hidden'); document.getElementById('lightbox-img').src = ''; }, 300); }
 
         function toggleView() {
@@ -673,7 +750,18 @@
                 const d = mapData[tId];
                 if (!d || !d.points) return;
                 let items = '', tComp = 0, tTotal = 0;
-                d.points.forEach(poi => {
+
+                // 若已獲取定位，案件清單自動依直線距離由近至遠排序
+                let sortedPoints = d.points.slice();
+                if (userLatLng) {
+                    sortedPoints.sort((a, b) => {
+                        const distA = getDistanceTo(a.lat, a.lng) ?? 9999999;
+                        const distB = getDistanceTo(b.lat, b.lng) ?? 9999999;
+                        return distA - distB;
+                    });
+                }
+
+                sortedPoints.forEach(poi => {
                     if (!isCategoryVisible(poi.category)) return;
                     tTotal++;
                     const isDone = (poi.category === '雜草') ? inspectionState[poi.id]?.done : inspectionState[poi.id]?.[currentPeriod];
@@ -683,7 +771,11 @@
                     let badge = 'badge-waste';
                     if (poi.category === '菸蒂') badge = 'badge-cigarette';
                     else if (poi.category === '雜草') badge = 'badge-weed';
-                    items += `<div class="card-elevated p-4 flex items-center justify-between cursor-pointer active:scale-95 transition-transform" onclick="jumpToMap('${tId}','${poi.id}',${poi.lat},${poi.lng})"><div class="pr-2"><div class="text-xs text-slate-400 mb-1 flex flex-wrap gap-2 items-center"><span class="${badge} px-2 py-0.5 rounded text-[10px] font-bold">${poi.category}</span><span class="bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-slate-300">#${poi.rawId}</span>${(poi.category!=='雜草' && isDone)?'<span class="text-emerald-400 font-bold"><i class="ph-fill ph-check-circle"></i> 已巡檢</span>':''}</div><h4 class="text-white font-bold text-base line-clamp-1">${poi.name}</h4><div class="text-[11px] text-slate-500 mt-1">${poi.agency}</div></div><div class="w-10 h-10 shrink-0 rounded-full bg-slate-800 flex items-center justify-center text-sky-400"><i class="ph-fill ph-navigation-arrow text-lg"></i></div></div>`;
+
+                    const dist = getDistanceTo(poi.lat, poi.lng);
+                    const distBadge = dist !== null ? `<span class="bg-sky-950/80 text-sky-400 border border-sky-500/30 px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1"><i class="ph-bold ph-navigation-arrow"></i> ${formatDistance(dist)}</span>` : '';
+
+                    items += `<div class="card-elevated p-4 flex items-center justify-between cursor-pointer active:scale-95 transition-transform" onclick="jumpToMap('${tId}','${poi.id}',${poi.lat},${poi.lng})"><div class="pr-2"><div class="text-xs text-slate-400 mb-1 flex flex-wrap gap-2 items-center"><span class="${badge} px-2 py-0.5 rounded text-[10px] font-bold">${poi.category}</span><span class="bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-slate-300">#${poi.rawId}</span>${(poi.category!=='雜草' && isDone)?'<span class="text-emerald-400 font-bold"><i class="ph-fill ph-check-circle"></i> 已巡檢</span>':''}${distBadge}</div><h4 class="text-white font-bold text-base line-clamp-1">${poi.name}</h4><div class="text-[11px] text-slate-500 mt-1">${poi.agency}</div></div><div class="w-10 h-10 shrink-0 rounded-full bg-slate-800 flex items-center justify-center text-sky-400"><i class="ph-fill ph-navigation-arrow text-lg"></i></div></div>`;
                 });
                 if (items) container.innerHTML += `<div class="mt-4 mb-2"><h4 class="text-white font-bold text-base flex items-center gap-2 bg-slate-800/80 px-3 py-2 rounded-lg border border-slate-700"><i class="ph-fill ph-map-pin text-sky-400"></i> ${d.name} <span class="text-xs text-slate-400 font-normal ml-auto">進度 ${tComp}/${tTotal}</span></h4></div><div class="flex flex-col gap-3 pl-2 border-l-2 border-slate-800 ml-3">${items}</div>`;
             });
@@ -722,7 +814,6 @@
         }
 
         async function performSyncAndEnter() {
-            document.getElementById('login-screen').style.display = 'none';
             document.getElementById('splash-screen').style.opacity = '0';
             setTimeout(() => document.getElementById('splash-screen').style.visibility = 'hidden', 500);
             if(map) map.invalidateSize();
@@ -737,27 +828,22 @@
             else showToast("⚠️ 圖資庫內未發現點位資料！","warning");
         }
 
-        async function checkPassword() {
-            if (document.getElementById('pwd-input').value === SYSTEM_PASSWORD) {
-                document.getElementById('pwd-error').style.opacity = '0';
-                document.getElementById('btn-login').innerHTML = '<i class="ph ph-spinner animate-spin text-xl"></i> 載入系統中...';
-                localStorage.setItem('nantou_messy_system_auth', 'true');
-                await performSyncAndEnter();
-                showToast("🔓 密碼核對成功！","success");
-            } else {
-                document.getElementById('pwd-error').style.opacity = '1';
-                document.getElementById('pwd-input').value = '';
-                showToast("❌ 授權碼不正確！","error");
-            }
-        }
-
         function locateUser() {
             if (!navigator.geolocation) return showToast("❌ 不支援 GPS","error");
             navigator.geolocation.getCurrentPosition(pos => {
+                userLatLng = L.latLng(pos.coords.latitude, pos.coords.longitude);
                 if (userMarker) map.removeLayer(userMarker);
                 userMarker = L.marker([pos.coords.latitude, pos.coords.longitude], { icon: L.divIcon({ className: 'custom-user-icon', html: '<div class="relative"><div class="user-pulse"></div><div class="user-location-marker"></div></div>', iconSize: [16,16], iconAnchor: [8,8] }), zIndexOffset: 1000 }).addTo(map);
                 map.flyTo([pos.coords.latitude, pos.coords.longitude], 16, { animate: true, duration: 1.5 });
-                showToast("📍 已獲取當前 GPS 位置！","success");
+                
+                // 定位後若清單已開啟，自動更新由近至遠排序
+                if (isListView) renderListView();
+                // 若底部抽屜開啟中，自動刷新距離標籤
+                if (currentItemId && currentTownshipId) {
+                    const poi = mapData[currentTownshipId]?.points.find(p => p.id === currentItemId);
+                    if (poi) showBottomSheet(poi, currentTownshipId);
+                }
+                showToast("📍 已獲取 GPS 位置！清單已自動依距離由近至遠排序","success");
             }, () => showToast("❌ GPS 定位失敗","error"), { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
         }
 
