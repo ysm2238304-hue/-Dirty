@@ -559,15 +559,25 @@
                 mt.innerText = isDone ? "取消" : "填入";
 
                 if (statusBadge && dateBadge) {
-                    if (isDone) {
+                    const currentStatusText = state[activePeriod + '_status'] || (isDone ? "已改善" : "未改善");
+                    const currentDateText = state[activePeriod + '_date'] || "";
+
+                    if (currentStatusText === "已改善") {
                         statusBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
-                        statusBadge.innerText = state[activePeriod + '_status'] || "已改善";
-                        dateBadge.className = "text-xs font-mono font-bold text-emerald-400";
-                        dateBadge.innerText = state[activePeriod + '_date'] || "已登錄";
+                        statusBadge.innerText = "已改善";
+                    } else if (currentStatusText.indexOf("非屬") !== -1) {
+                        statusBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700";
+                        statusBadge.innerText = currentStatusText;
                     } else {
                         statusBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30";
-                        statusBadge.innerText = state[activePeriod + '_status'] || "未改善";
-                        dateBadge.className = "text-xs font-mono font-bold text-slate-400";
+                        statusBadge.innerText = currentStatusText || "未改善";
+                    }
+
+                    if (currentDateText && currentDateText.trim() !== "") {
+                        dateBadge.className = "text-xs font-mono font-bold text-sky-400";
+                        dateBadge.innerText = currentDateText;
+                    } else {
+                        dateBadge.className = "text-xs font-mono font-bold text-slate-500";
                         dateBadge.innerText = "尚未登錄";
                     }
                 }
@@ -591,9 +601,11 @@
                 const result = await res.json();
                 if (result.status === "success" && result.data) {
                     if (!inspectionState[poi.id]) inspectionState[poi.id] = { H1: false, H2: false, done: false };
-                    const isImproved = (result.data.status === "已改善") || (result.data.date && result.data.date.trim() !== "");
+                    
+                    // 嚴格依據試算表狀態字串判定是否為已改善，絕不因有日期而強行覆蓋未改善狀態
+                    const isImproved = (result.data.status === "已改善");
                     inspectionState[poi.id][period] = isImproved;
-                    inspectionState[poi.id][period + '_status'] = result.data.status || (isImproved ? "已改善" : "未改善");
+                    inspectionState[poi.id][period + '_status'] = result.data.status || "未改善";
                     inspectionState[poi.id][period + '_date'] = result.data.date || "";
                     saveState();
                     if (currentItemId === poi.id) updateBottomSheetStatus();
