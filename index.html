@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="髒亂點巡檢">
     <meta name="theme-color" content="#020617">
     <link class="manifest" id="dynamic-manifest">
-    <title>115年南投縣髒亂點巡查系統 v5.30</title>
+    <title>115年南投縣髒亂點巡查系統 v5.35</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -79,7 +79,7 @@
         </div>
         <h1 class="text-3xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500 mb-2">髒亂點巡檢</h1>
         <p class="text-slate-400 tracking-widest text-sm uppercase">115年 廢棄物/菸蒂/雜草</p>
-        <p class="text-sm text-sky-400 font-bold mt-2 shadow-black">v5.30 穩定版</p>
+        <p class="text-sm text-sky-400 font-bold mt-2 shadow-black">v5.35 雙軌同步版</p>
         <div id="loading-status" class="mt-12 text-sky-400 text-sm animate-pulse flex items-center gap-2"><i class="ph ph-spinner animate-spin text-lg"></i> 載入 KML 圖資中...</div>
         <div id="kml-upload-fallback" class="hidden mt-8 flex flex-col items-center">
             <p class="text-red-400 text-xs mb-3 font-bold bg-red-500/20 px-4 py-2 rounded-lg">無法自動讀取 KML，請手動選擇「115年南投縣髒亂點.kml」</p>
@@ -110,7 +110,6 @@
     <div id="map" class="absolute inset-0 z-0"></div>
 
     <div id="ui-layer" class="absolute inset-0 z-10 pointer-events-none">
-        <!-- 移除大面積黑霧遮罩，改為高對比獨立懸浮卡片 -->
         <div class="pointer-events-auto absolute top-0 left-0 w-full safe-top-padding px-3.5 pb-2 z-[50]">
             <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-2.5 shadow-2xl flex flex-col gap-2">
                 <div class="segmented-control" id="category-selector">
@@ -163,6 +162,7 @@
                     <button id="mark-btn" class="shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all border cursor-pointer h-[55px] min-w-[110px] hover:-translate-y-0.5" onclick="toggleItemStatus()"><span class="text-[10px] opacity-70 leading-none" id="mark-period-text">上半年巡檢日期</span><div class="flex items-center gap-1 mt-0.5"><i class="ph-fill ph-check-circle" id="mark-icon"></i><span id="mark-text" class="leading-none">未巡檢</span></div></button>
                 </div>
 
+                <!-- 專屬雙軌狀態看板：現場改善成果 + 巡檢登記日期 -->
                 <div id="sheet-status-card" class="mb-3 bg-slate-900/90 p-3 rounded-xl border border-slate-700/80 flex flex-col gap-2 shadow-lg">
                     <div class="flex items-center justify-between">
                         <span class="text-slate-400 text-xs font-bold flex items-center gap-1.5">
@@ -194,10 +194,8 @@
                         </label>
                     </div>
 
-                    <!-- 相片預覽與狀態標籤網格 -->
                     <div id="photo-preview-grid" class="grid grid-cols-3 gap-2 mb-3 empty:hidden"></div>
 
-                    <!-- 即時上傳進度條容器 -->
                     <div id="upload-progress-container" class="hidden mb-3 bg-slate-900/90 p-3 rounded-xl border border-slate-700/80">
                         <div class="flex justify-between items-center text-xs font-bold mb-1.5">
                             <span id="upload-progress-text" class="text-sky-400 flex items-center gap-1.5"><i class="ph ph-spinner animate-spin"></i> 準備上傳中...</span>
@@ -208,7 +206,6 @@
                         </div>
                     </div>
 
-                    <!-- 上傳觸發按鈕 -->
                     <button id="btn-upload-drive" onclick="uploadPhotosToDrive()" class="w-full bg-slate-700 hover:bg-slate-600 border border-slate-600 text-white text-sm font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all mt-2 cursor-pointer shadow-lg hover:-translate-y-0.5">
                         <i class="ph-fill ph-cloud-arrow-up text-lg text-sky-400" id="upload-btn-icon"></i>
                         <span id="upload-btn-text">上傳照片並填入巡檢日期</span>
@@ -223,7 +220,6 @@
     </div>
 
     <script>
-        // ===== 輔助函數 =====
         function normalizeString(str) {
             if (!str) return "";
             return str.toString().replace(/\uFEFF/g, '').replace(/\s+/g, '').replace(/[-_－—\/\\#+]/g, '').toLowerCase();
@@ -325,16 +321,18 @@
             hideBottomSheet();
             if (currentTownshipId) loadTownship(currentTownshipId, true);
             if (isListView) renderListView();
+            syncTownshipStatuses(currentTownshipId);
         }
 
         function setPeriod(period) {
             currentPeriod = period;
-            document.getElementById('btn-period-h1').className = period === 'H1' ? 'period-btn active flex-1 py-2 rounded-full text-sm flex justify-center items-center gap-1' : 'period-btn inactive flex-1 py-2 rounded-full text-sm flex justify-center items-center gap-1';
-            document.getElementById('btn-period-h2').className = period === 'H2' ? 'period-btn active flex-1 py-2 rounded-full text-sm flex justify-center items-center gap-1' : 'period-btn inactive flex-1 py-2 rounded-full text-sm flex justify-center items-center gap-1';
+            document.getElementById('btn-period-h1').className = period === 'H1' ? 'period-btn active flex-1 py-1.5 rounded-full text-xs flex justify-center items-center gap-1' : 'period-btn inactive flex-1 py-1.5 rounded-full text-xs flex justify-center items-center gap-1';
+            document.getElementById('btn-period-h2').className = period === 'H2' ? 'period-btn active flex-1 py-1.5 rounded-full text-xs flex justify-center items-center gap-1' : 'period-btn inactive flex-1 py-1.5 rounded-full text-xs flex justify-center items-center gap-1';
             if (currentTownshipId) loadTownship(currentTownshipId, true);
             if (currentItemId && !document.getElementById('bottom-sheet').classList.contains('hidden-sheet')) updateBottomSheetStatus();
             if (isListView) renderListView();
             updateProgressBar();
+            syncTownshipStatuses(currentTownshipId);
         }
 
         function isCategoryVisible(cat) {
@@ -480,7 +478,6 @@
             map = L.map('map', { zoomControl: false, tap: false }).setView([23.903, 120.951], 10);
             L.control.zoom({ position: 'topright' }).addTo(map);
             
-            // 使用 Google 標準道路地圖底圖
             L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
                 subdomains: ['0', '1', '2', '3'],
                 maxZoom: 20
@@ -549,6 +546,8 @@
             } else {
                 if(btn) btn.style.display = 'flex'; if(up) up.style.display = 'block'; if(rn) rn.classList.add('hidden');
                 if(statusCard) statusCard.style.display = 'flex';
+                
+                // 1. 是否已巡檢：看 state[activePeriod] (由是否有巡檢日期判定)
                 const isDone = state[activePeriod] || false;
                 const periodText = activePeriod === 'H1' ? '上半年' : '下半年';
                 if(pt) pt.innerText = `${periodText}巡檢日期`;
@@ -558,8 +557,9 @@
                 mi.className = isDone ? "ph-fill ph-check-circle text-lg text-white" : "ph-fill ph-warning-circle text-lg text-slate-500";
                 mt.innerText = isDone ? "取消" : "填入";
 
+                // 2. 現場改善成果：嚴格看試算表欄位值 (未/已改善/非屬範圍)
                 if (statusBadge && dateBadge) {
-                    const currentStatusText = state[activePeriod + '_status'] || (isDone ? "已改善" : "未改善");
+                    const currentStatusText = (state[activePeriod + '_status'] !== undefined) ? state[activePeriod + '_status'] : (isDone ? "已改善" : "未改善");
                     const currentDateText = state[activePeriod + '_date'] || "";
 
                     if (currentStatusText === "已改善") {
@@ -568,14 +568,25 @@
                     } else if (currentStatusText.indexOf("非屬") !== -1) {
                         statusBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700";
                         statusBadge.innerText = currentStatusText;
-                    } else {
+                    } else if (currentStatusText === "未改善") {
                         statusBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30";
+                        statusBadge.innerText = "未改善";
+                    } else if (!currentStatusText && isDone) {
+                        statusBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30";
+                        statusBadge.innerText = "尚未評定";
+                    } else {
+                        statusBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700";
                         statusBadge.innerText = currentStatusText || "未改善";
                     }
 
                     if (currentDateText && currentDateText.trim() !== "") {
-                        dateBadge.className = "text-xs font-mono font-bold text-sky-400";
-                        dateBadge.innerText = currentDateText;
+                        if (currentDateText.indexOf("非屬") !== -1) {
+                            dateBadge.className = "text-xs font-bold text-slate-400";
+                            dateBadge.innerText = "非本期範圍";
+                        } else {
+                            dateBadge.className = "text-xs font-mono font-bold text-sky-400";
+                            dateBadge.innerText = currentDateText;
+                        }
                     } else {
                         dateBadge.className = "text-xs font-mono font-bold text-slate-500";
                         dateBadge.innerText = "尚未登錄";
@@ -602,16 +613,69 @@
                 if (result.status === "success" && result.data) {
                     if (!inspectionState[poi.id]) inspectionState[poi.id] = { H1: false, H2: false, done: false };
                     
-                    // 嚴格依據試算表狀態字串判定是否為已改善，絕不因有日期而強行覆蓋未改善狀態
-                    const isImproved = (result.data.status === "已改善");
-                    inspectionState[poi.id][period] = isImproved;
-                    inspectionState[poi.id][period + '_status'] = result.data.status || "未改善";
-                    inspectionState[poi.id][period + '_date'] = result.data.date || "";
+                    const rawDate = (result.data.date || "").trim();
+                    const rawStatus = (result.data.status || "").trim();
+
+                    // 判斷是否已巡檢：看複檢期欄位是否有有效日期（排除空白與非屬範圍）
+                    const hasValidDate = Boolean(rawDate && rawDate !== "" && rawDate.indexOf("非屬") === -1);
+                    const isInspected = hasValidDate || rawStatus === "已改善";
+
+                    inspectionState[poi.id][period] = isInspected;
+                    inspectionState[poi.id][period + '_status'] = rawStatus;
+                    inspectionState[poi.id][period + '_date'] = rawDate;
                     saveState();
                     if (currentItemId === poi.id) updateBottomSheetStatus();
                 }
             } catch(e) {
                 console.warn("無法取得後端即時狀態: ", e);
+            }
+        }
+
+        // 全鄉鎮試算表點位進度批次同步
+        async function syncTownshipStatuses(tId) {
+            if (!tId || !mapData[tId]) return;
+            try {
+                const res = await fetch(GOOGLE_APP_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'batchQuery',
+                        category: currentCategoryFilter,
+                        period: currentPeriod,
+                        township: mapData[tId].name
+                    })
+                });
+                if (!res.ok) return;
+                const result = await res.json();
+                if (result.status === "success" && Array.isArray(result.data)) {
+                    let updatedAny = false;
+                    result.data.forEach(item => {
+                        const rDate = (item.date || "").trim();
+                        const rStatus = (item.status || "").trim();
+                        const hasDate = Boolean(rDate && rDate !== "" && rDate.indexOf("非屬") === -1);
+                        const isDone = hasDate || rStatus === "已改善";
+
+                        // 在當前鄉鎮匹配經緯度 (容差 0.0003 約 33m)
+                        const matchedPoi = mapData[tId].points.find(p => {
+                            return Math.abs(p.lat - item.lat) < 0.0003 && Math.abs(p.lng - item.lng) < 0.0003;
+                        });
+
+                        if (matchedPoi) {
+                            if (!inspectionState[matchedPoi.id]) inspectionState[matchedPoi.id] = { H1: false, H2: false, done: false };
+                            inspectionState[matchedPoi.id][currentPeriod] = isDone;
+                            inspectionState[matchedPoi.id][currentPeriod + '_status'] = rStatus;
+                            inspectionState[matchedPoi.id][currentPeriod + '_date'] = rDate;
+                            updatedAny = true;
+                        }
+                    });
+
+                    if (updatedAny) {
+                        saveState();
+                        if (currentItemId) updateBottomSheetStatus();
+                    }
+                }
+            } catch(err) {
+                console.warn("批次同步進度失敗: ", err);
             }
         }
 
@@ -721,7 +785,6 @@
             localStorage.removeItem('nantou_last_active_poi');
         }
 
-        // ===== 照片處理與即時壓縮 =====
         function handlePhotoUpload(event) {
             const files = event.target.files;
             if(!files.length || !currentItemId || !currentTownshipId) return;
@@ -751,7 +814,7 @@
                             id: Date.now() + Math.random(),
                             data: compressedData,
                             uploaded: false,
-                            status: 'pending' // pending | uploading | success | error
+                            status: 'pending'
                         });
                         
                         canvas.width = 0; canvas.height = 0;
@@ -800,7 +863,6 @@
                 </div>`;
             }).join('');
 
-            // 更新上傳按鈕狀態文字
             const unUploaded = photos.filter(p => !p.uploaded);
             const uploadBtnText = document.getElementById('upload-btn-text');
             if (uploadBtnText && !isUploadingActive) {
@@ -831,7 +893,6 @@
             return str.replace(/[\/\\:*?"<>|]/g, '-').replace(/\s+/g, '_').substring(0, 100);
         }
 
-        // ===== 視覺化進度條與單張容錯上傳 =====
         async function uploadPhotosToDrive() {
             if (isUploadingActive) return;
             if (!currentItemId || !currentTownshipId) return;
@@ -928,13 +989,11 @@
                 saveState();
                 renderPhotos();
 
-                // 緩衝 600ms，避免高頻請求觸發 Google API 429 限制
                 if (i < targets.length - 1) {
                     await new Promise(r => setTimeout(r, 600));
                 }
             }
 
-            // 完成狀態結算
             const finalPct = 100;
             progressFill.style.width = `${finalPct}%`;
             progressPercent.innerText = `${finalPct}%`;
@@ -947,6 +1006,12 @@
 
             if (successCount > 0) {
                 inspectionState[currentItemId][activePeriod] = true;
+                const now = new Date();
+                const rocYear = now.getFullYear() - 1911;
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                inspectionState[currentItemId][activePeriod + '_date'] = `${rocYear}.${mm}.${dd}`;
+                inspectionState[currentItemId][activePeriod + '_status'] = "已改善";
                 saveState();
                 updateBottomSheetStatus();
             }
@@ -1105,7 +1170,7 @@
             Object.keys(mapData).forEach(id => {
                 const btn = document.createElement('div'); btn.dataset.id = id;
                 btn.className = 'township-pill bg-slate-800/60 border border-slate-700 text-slate-400 cursor-pointer hover:bg-slate-700';
-                btn.innerText = mapData[id].name; btn.onclick = () => loadTownship(id);
+                btn.innerText = mapData[id].name; btn.onclick = () => { loadTownship(id); syncTownshipStatuses(id); };
                 sel.appendChild(btn);
             });
 
@@ -1116,6 +1181,7 @@
                     if (lastSession.period && lastSession.period !== currentPeriod) setPeriod(lastSession.period);
                     if (lastSession.category && lastSession.category !== currentCategoryFilter) setCategoryFilter(lastSession.category);
                     loadTownship(lastSession.townshipId, true);
+                    syncTownshipStatuses(lastSession.townshipId);
                     map.setView([targetPoi.lat, targetPoi.lng], 16);
                     setTimeout(() => {
                         showBottomSheet(targetPoi, lastSession.townshipId);
@@ -1125,8 +1191,13 @@
                 }
             }
 
-            if (Object.keys(mapData).length) loadTownship(Object.keys(mapData)[0]);
-            else showToast("⚠️ 圖資庫內未發現點位資料！","warning");
+            if (Object.keys(mapData).length) {
+                const firstId = Object.keys(mapData)[0];
+                loadTownship(firstId);
+                syncTownshipStatuses(firstId);
+            } else {
+                showToast("⚠️ 圖資庫內未發現點位資料！","warning");
+            }
         }
 
         function locateUser() {
