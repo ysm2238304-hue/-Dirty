@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="髒亂點巡檢">
     <meta name="theme-color" content="#020617">
     <link class="manifest" id="dynamic-manifest">
-    <title>115年南投縣髒亂點巡查系統 v5.35</title>
+    <title>115年南投縣髒亂點巡查系統 v5.40</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -79,7 +79,7 @@
         </div>
         <h1 class="text-3xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500 mb-2">髒亂點巡檢</h1>
         <p class="text-slate-400 tracking-widest text-sm uppercase">115年 廢棄物/菸蒂/雜草</p>
-        <p class="text-sm text-sky-400 font-bold mt-2 shadow-black">v5.35 雙軌同步版</p>
+        <p class="text-sm text-sky-400 font-bold mt-2 shadow-black">v5.40 唯讀參考版</p>
         <div id="loading-status" class="mt-12 text-sky-400 text-sm animate-pulse flex items-center gap-2"><i class="ph ph-spinner animate-spin text-lg"></i> 載入 KML 圖資中...</div>
         <div id="kml-upload-fallback" class="hidden mt-8 flex flex-col items-center">
             <p class="text-red-400 text-xs mb-3 font-bold bg-red-500/20 px-4 py-2 rounded-lg">無法自動讀取 KML，請手動選擇「115年南投縣髒亂點.kml」</p>
@@ -162,14 +162,14 @@
                     <button id="mark-btn" class="shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all border cursor-pointer h-[55px] min-w-[110px] hover:-translate-y-0.5" onclick="toggleItemStatus()"><span class="text-[10px] opacity-70 leading-none" id="mark-period-text">上半年巡檢日期</span><div class="flex items-center gap-1 mt-0.5"><i class="ph-fill ph-check-circle" id="mark-icon"></i><span id="mark-text" class="leading-none">未巡檢</span></div></button>
                 </div>
 
-                <!-- 專屬雙軌狀態看板：現場改善成果 + 巡檢登記日期 -->
+                <!-- 專屬雙軌狀態看板：現場改善成果 (唯讀參考) + 巡檢登記日期 -->
                 <div id="sheet-status-card" class="mb-3 bg-slate-900/90 p-3 rounded-xl border border-slate-700/80 flex flex-col gap-2 shadow-lg">
                     <div class="flex items-center justify-between">
                         <span class="text-slate-400 text-xs font-bold flex items-center gap-1.5">
                             <i class="ph-fill ph-flag-banner text-sky-400 text-sm"></i>
-                            <span id="sheet-status-label">上半年複查進度</span>
+                            <span id="sheet-status-label">上半年複查成果 (參考)</span>
                         </span>
-                        <span id="sheet-status-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">未改善</span>
+                        <span id="sheet-status-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700">尚未評定</span>
                     </div>
                     <div class="flex items-center justify-between pt-2 border-t border-slate-800">
                         <span class="text-slate-400 text-xs font-bold flex items-center gap-1.5">
@@ -551,15 +551,15 @@
                 const isDone = state[activePeriod] || false;
                 const periodText = activePeriod === 'H1' ? '上半年' : '下半年';
                 if(pt) pt.innerText = `${periodText}巡檢日期`;
-                if(statusLabel) statusLabel.innerText = `${periodText}複查進度`;
+                if(statusLabel) statusLabel.innerText = `${periodText}複查成果 (參考)`;
 
                 btn.className = isDone ? "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all border bg-emerald-600 border-emerald-400 text-white cursor-pointer h-[55px] min-w-[110px]" : "shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-all border bg-slate-800 border-slate-600 text-slate-400 cursor-pointer h-[55px] min-w-[110px]";
                 mi.className = isDone ? "ph-fill ph-check-circle text-lg text-white" : "ph-fill ph-warning-circle text-lg text-slate-500";
                 mt.innerText = isDone ? "取消" : "填入";
 
-                // 2. 現場改善成果：嚴格看試算表欄位值 (未/已改善/非屬範圍)
+                // 2. 現場改善成果：100% 讀取試算表原值，作為純參考依據，絕不預設為已改善
                 if (statusBadge && dateBadge) {
-                    const currentStatusText = (state[activePeriod + '_status'] !== undefined) ? state[activePeriod + '_status'] : (isDone ? "已改善" : "未改善");
+                    const currentStatusText = (state[activePeriod + '_status'] !== undefined && state[activePeriod + '_status'] !== null) ? state[activePeriod + '_status'].trim() : "";
                     const currentDateText = state[activePeriod + '_date'] || "";
 
                     if (currentStatusText === "已改善") {
@@ -571,12 +571,12 @@
                     } else if (currentStatusText === "未改善") {
                         statusBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30";
                         statusBadge.innerText = "未改善";
-                    } else if (!currentStatusText && isDone) {
-                        statusBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30";
+                    } else if (!currentStatusText) {
+                        statusBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700";
                         statusBadge.innerText = "尚未評定";
                     } else {
                         statusBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700";
-                        statusBadge.innerText = currentStatusText || "未改善";
+                        statusBadge.innerText = currentStatusText;
                     }
 
                     if (currentDateText && currentDateText.trim() !== "") {
@@ -618,7 +618,7 @@
 
                     // 判斷是否已巡檢：看複檢期欄位是否有有效日期（排除空白與非屬範圍）
                     const hasValidDate = Boolean(rawDate && rawDate !== "" && rawDate.indexOf("非屬") === -1);
-                    const isInspected = hasValidDate || rawStatus === "已改善";
+                    const isInspected = hasValidDate;
 
                     inspectionState[poi.id][period] = isInspected;
                     inspectionState[poi.id][period + '_status'] = rawStatus;
@@ -631,7 +631,6 @@
             }
         }
 
-        // 全鄉鎮試算表點位進度批次同步
         async function syncTownshipStatuses(tId) {
             if (!tId || !mapData[tId]) return;
             try {
@@ -653,7 +652,7 @@
                         const rDate = (item.date || "").trim();
                         const rStatus = (item.status || "").trim();
                         const hasDate = Boolean(rDate && rDate !== "" && rDate.indexOf("非屬") === -1);
-                        const isDone = hasDate || rStatus === "已改善";
+                        const isDone = hasDate;
 
                         // 在當前鄉鎮匹配經緯度 (容差 0.0003 約 33m)
                         const matchedPoi = mapData[tId].points.find(p => {
@@ -712,7 +711,12 @@
                     const mm = String(now.getMonth() + 1).padStart(2, '0');
                     const dd = String(now.getDate()).padStart(2, '0');
                     inspectionState[currentItemId][activePeriod + '_date'] = newState ? `${rocYear}.${mm}.${dd}` : "";
-                    inspectionState[currentItemId][activePeriod + '_status'] = newState ? "已改善" : "未改善";
+                    
+                    // 若後端有回傳試算表原值，同步更新快取，但不擅自假定為已改善
+                    if (result.data && result.data.status !== undefined) {
+                        inspectionState[currentItemId][activePeriod + '_status'] = result.data.status;
+                    }
+
                     saveState(); updateBottomSheetStatus();
                     showToast(result.status==="warning"?`⚠️ ${result.message}`:`✅ 已成功【${newState?'填入':'取消'}】巡檢日期！`, result.status==="warning"?"warning":"success");
                 } else {
@@ -1011,7 +1015,7 @@
                 const mm = String(now.getMonth() + 1).padStart(2, '0');
                 const dd = String(now.getDate()).padStart(2, '0');
                 inspectionState[currentItemId][activePeriod + '_date'] = `${rocYear}.${mm}.${dd}`;
-                inspectionState[currentItemId][activePeriod + '_status'] = "已改善";
+                // 唯讀參考原則：絕不自行設定 status = "已改善"，保留試算表真實原值
                 saveState();
                 updateBottomSheetStatus();
             }
